@@ -2,10 +2,12 @@ package net.slidermc.sliderproxy.network.packet.serverbound.login;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.slidermc.sliderproxy.RunningData;
 import net.slidermc.sliderproxy.api.player.GameProfile;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
+import net.slidermc.sliderproxy.api.server.ServerManager;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
@@ -50,9 +52,10 @@ public class ServerboundHelloPacket implements IMinecraftPacket {
         ProxiedPlayer player = new ProxiedPlayer(new GameProfile(username, uuid), connection);
         PlayerManager.getInstance().registerPlayer(player);
 
-        ProxiedServer targetServer = new ProxiedServer(new InetSocketAddress("127.0.0.1", 25585), "test");
+        String defaultServerName = RunningData.configuration.getString("proxy.default-server", "lobby");
+        ProxiedServer defaultServer = ServerManager.getInstance().getServer(defaultServerName);
 
-        player.connectTo(targetServer).thenRun(() -> {
+        player.connectTo(defaultServer).thenRun(() -> {
             connection.getUpstreamChannel().eventLoop().execute(() -> {
                 ClientboundLoginSuccessPacket loginSuccessPacket = new ClientboundLoginSuccessPacket(this.uuid, this.username, List.of());
                 connection.getUpstreamChannel().writeAndFlush(loginSuccessPacket);

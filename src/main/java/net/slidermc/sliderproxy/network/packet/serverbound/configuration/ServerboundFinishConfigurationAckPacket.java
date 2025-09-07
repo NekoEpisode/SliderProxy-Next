@@ -28,7 +28,6 @@ public class ServerboundFinishConfigurationAckPacket implements IMinecraftPacket
         if (connection.getDownstreamChannel() != null) {
             Channel downstreamChannel = connection.getDownstreamChannel();
 
-            // Ensure we're in the correct event loop and wait for write completion
             if (downstreamChannel.eventLoop().inEventLoop()) {
                 downstreamChannel.writeAndFlush(this).addListener(future -> {
                     if (future.isSuccess()) {
@@ -51,7 +50,6 @@ public class ServerboundFinishConfigurationAckPacket implements IMinecraftPacket
                 });
             }
         } else {
-            // No downstream connection, just update states
             updateProtocolStates(connection);
         }
 

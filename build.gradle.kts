@@ -43,6 +43,13 @@ dependencies {
 
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.0")
     implementation("com.lmax:disruptor:3.4.4")
+
+    implementation("net.kyori:adventure-api:4.24.0")
+    implementation("net.kyori:adventure-text-minimessage:4.24.0")
+    implementation("net.kyori:adventure-text-serializer-legacy:4.24.0")
+    implementation("net.kyori:adventure-text-serializer-plain:4.24.0")
+    implementation("net.kyori:adventure-text-serializer-gson:4.24.0")
+    implementation("net.kyori:adventure-nbt:4.24.0")
 }
 
 tasks.test {

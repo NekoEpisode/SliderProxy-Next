@@ -197,7 +197,7 @@ public final class TranslateManager {
      */
     @NotNull
     public static String translateWithLangOrDefault(@NotNull String languageCode, @NotNull String key, @NotNull String defaultValue) {
-        String result = translate(languageCode, key);
+        String result = translateWithLang(languageCode, key);
         return result != null ? result : defaultValue;
     }
 

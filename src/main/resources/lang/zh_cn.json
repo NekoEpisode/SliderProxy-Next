@@ -1,3 +1,14 @@
 {
-  "sliderproxy.startup": "SliderProxy已在 %s%:%s1% 启动"
+  "sliderproxy.startup": "SliderProxy已在 %s%:%s1% 启动",
+
+  "sliderproxy.config.save.error": "在保存配置文件时出现了错误",
+  "sliderproxy.config.creating": "正在创建配置文件",
+  "sliderproxy.config.create.error": "创建配置文件时出现了错误",
+  "sliderproxy.config.create.notfound": "尝试创建配置文件中，但未找到模板",
+  "sliderproxy.config.create.success": "已创建配置文件",
+  "sliderproxy.config.servers.notfound": "未找到服务器配置",
+  "sliderproxy.config.server.invalid": "服务器 '%s%' 配置无效",
+  "sliderproxy.config.server.loaded": "已加载服务器: %s% (地址: %s1%: %s2%)",
+  "sliderproxy.config.servers.loaded": "已加载 %s% 个服务器",
+  "sliderproxy.config.defaultserver.notfound": "默认服务器 '%s%' 不存在"
 }

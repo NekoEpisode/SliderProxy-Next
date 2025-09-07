@@ -3,10 +3,9 @@ package net.slidermc.sliderproxy.network;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
+import java.util.*;
 
 public class MinecraftProtocolHelper {
-
     /**
      * 读取 Minecraft VarInt
      */
@@ -169,6 +168,22 @@ public class MinecraftProtocolHelper {
     }
 
     /**
+     * 读取带长度前缀的 ByteArray
+     */
+    public static byte[] readPrefixedByteArray(ByteBuf buf) {
+        int length = readVarInt(buf);
+        return readByteArray(buf, length);
+    }
+
+    /**
+     * 写带长度前缀的 ByteArray
+     */
+    public static void writePrefixedByteArray(ByteBuf buf, byte[] bytes) {
+        writeVarInt(buf, bytes.length);
+        writeByteArray(buf, bytes);
+    }
+
+    /**
      * 获取 VarInt 编码后的字节长度
      */
     public static int getVarIntSize(int value) {
@@ -177,5 +192,17 @@ public class MinecraftProtocolHelper {
         if ((value & 0xFFE00000) == 0) return 3;
         if ((value & 0xF0000000) == 0) return 4;
         return 5;
+    }
+
+    /**
+     * 获取 VarLong 编码后的字节长度
+     */
+    public static int getVarLongSize(long value) {
+        int size = 0;
+        do {
+            value >>>= 7;
+            size++;
+        } while (value != 0);
+        return size;
     }
 }
