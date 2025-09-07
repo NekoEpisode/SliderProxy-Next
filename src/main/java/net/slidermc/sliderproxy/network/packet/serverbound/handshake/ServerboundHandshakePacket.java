@@ -1,0 +1,107 @@
+package net.slidermc.sliderproxy.network.packet.serverbound.handshake;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
+import net.slidermc.sliderproxy.network.ProtocolState;
+import net.slidermc.sliderproxy.network.connection.PlayerConnection;
+import net.slidermc.sliderproxy.network.packet.HandleResult;
+import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
+
+public class ServerboundHandshakePacket implements IMinecraftPacket {
+    private static final Logger log = LoggerFactory.getLogger(ServerboundHandshakePacket.class);
+    private int protocolVersion;
+    private String serverAddress;
+    private short serverPort;
+    private int intent;
+
+    public ServerboundHandshakePacket() {}
+
+    public ServerboundHandshakePacket(int protocolVersion, String serverAddress, short serverPort, int intent) {
+        this.protocolVersion = protocolVersion;
+        this.serverAddress = serverAddress;
+        this.serverPort = serverPort;
+        this.intent = intent;
+    }
+
+    @Override
+    public void read(ByteBuf byteBuf) {
+        this.protocolVersion = MinecraftProtocolHelper.readVarInt(byteBuf);
+        this.serverAddress = MinecraftProtocolHelper.readString(byteBuf);
+        this.serverPort = byteBuf.readShort();
+        this.intent = MinecraftProtocolHelper.readVarInt(byteBuf);
+    }
+
+    @Override
+    public void write(ByteBuf byteBuf) {
+        MinecraftProtocolHelper.writeVarInt(byteBuf, this.protocolVersion);
+        MinecraftProtocolHelper.writeString(byteBuf, this.serverAddress);
+        byteBuf.writeShort(this.serverPort);
+        MinecraftProtocolHelper.writeVarInt(byteBuf, this.intent);
+    }
+
+    @Override
+    public HandleResult handle(ChannelHandlerContext ctx) {
+        switch (this.intent) {
+            case 1 -> {
+                // Status
+                ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamInboundProtocolState(ProtocolState.STATUS); // 将(预测)客户端的状态设置为Status(Motd请求)
+                ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamOutboundProtocolState(ProtocolState.STATUS); // 切换代理自身的状态设置为Status
+            }
+
+            case 2 -> {
+                // Login
+                ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamInboundProtocolState(ProtocolState.LOGIN); // 将(预测)客户端的状态设置为Login(登录请求)
+                ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamOutboundProtocolState(ProtocolState.LOGIN); // 切换代理自身的状态设置为Login
+            }
+
+            case 3 -> {
+                // Transfer
+                // TODO: 完成Transfer
+            }
+        }
+        return HandleResult.UNFORWARD;
+    }
+
+    public int getIntent() {
+        return intent;
+    }
+
+    public int getProtocolVersion() {
+        return protocolVersion;
+    }
+
+    public short getServerPort() {
+        return serverPort;
+    }
+
+    public String getServerAddress() {
+        return serverAddress;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        ServerboundHandshakePacket that = (ServerboundHandshakePacket) o;
+        return protocolVersion == that.protocolVersion && serverPort == that.serverPort && intent == that.intent && Objects.equals(serverAddress, that.serverAddress);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(protocolVersion, serverAddress, serverPort, intent);
+    }
+
+    @Override
+    public String toString() {
+        return "ServerboundHandshakePacket{" +
+                "protocolVersion=" + protocolVersion +
+                ", serverAddress='" + serverAddress + '\'' +
+                ", serverPort=" + serverPort +
+                ", intent=" + intent +
+                '}';
+    }
+}
