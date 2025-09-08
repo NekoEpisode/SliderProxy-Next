@@ -2,15 +2,20 @@ package net.slidermc.sliderproxy.network.packet.serverbound.play;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.api.server.ServerManager;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
+import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerboundChatCommandPacket implements IMinecraftPacket {
+    private static final Logger log = LoggerFactory.getLogger(ServerboundChatCommandPacket.class);
     private String command;
 
     public ServerboundChatCommandPacket() {}
@@ -33,13 +38,19 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
+        ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
+        if (player == null) return HandleResult.FORWARD;
         if (command.startsWith("server")) {
-            ProxiedServer target = ServerManager.getInstance().getServer(command.split(" ")[1]);
+            String[] commands = command.split(" ");
+            if (commands.length < 2) {
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>请输入服务器名！</red>"));
+                return HandleResult.UNFORWARD;
+            }
+            ProxiedServer target = ServerManager.getInstance().getServer(commands[1]);
             if (target != null) {
-                ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
-                if (player != null) {
-                    player.connectTo(target);
-                }
+                player.connectTo(target);
+            } else {
+                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>服务器不存在！</red>"));
             }
             return HandleResult.UNFORWARD;
         }

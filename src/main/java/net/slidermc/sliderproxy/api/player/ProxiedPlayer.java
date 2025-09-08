@@ -2,29 +2,32 @@ package net.slidermc.sliderproxy.api.player;
 
 import net.kyori.adventure.text.Component;
 import net.slidermc.sliderproxy.api.command.CommandSender;
+import net.slidermc.sliderproxy.api.player.connectionrequest.ConnectRequest;
+import net.slidermc.sliderproxy.api.player.connectionrequest.InitialConnectRequest;
+import net.slidermc.sliderproxy.api.player.connectionrequest.ServerSwitchRequest;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
-import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
-import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundStartConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSystemChatPacket;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ProxiedPlayer implements CommandSender {
     private static final Logger log = LoggerFactory.getLogger(ProxiedPlayer.class);
+
     private final GameProfile gameProfile;
     private final PlayerConnection playerConnection;
-    private MinecraftNettyClient downstreamClient = null;
-    private ProxiedServer connectedServer = null;
-    private final Queue<ProxiedServer> switchServerQueue = new LinkedList<>();
-    private CompletableFuture<Void> startConfigurationAckFuture;
+    private volatile MinecraftNettyClient downstreamClient = null;
+    private volatile ProxiedServer connectedServer = null;
+
+    // 用于管理连接请求的状态
+    private final AtomicReference<ConnectRequest> currentConnectRequest = new AtomicReference<>();
+    private volatile CompletableFuture<Void> startConfigurationAckFuture;
 
     public ProxiedPlayer(GameProfile gameProfile, PlayerConnection playerConnection) {
         this.gameProfile = gameProfile;
@@ -48,60 +51,71 @@ public class ProxiedPlayer implements CommandSender {
         sendPacket(new ClientboundSystemChatPacket(component, actionbar));
     }
 
+    /**
+     * 连接到服务器 - 统一的连接入口
+     */
     public CompletableFuture<Void> connectTo(ProxiedServer server) {
-        if (connectedServer != null) {
-            connectedServer.getConnectedPlayers().remove(this);
-
-            switchServerQueue.add(server);
-
-            startConfigurationAckFuture = new CompletableFuture<>();
-
-            // 发给客户端 StartConfiguration
-            playerConnection.getUpstreamChannel().eventLoop().execute(() -> {
-                playerConnection.getUpstreamChannel().writeAndFlush(new ClientboundStartConfigurationPacket());
-                playerConnection.setUpstreamOutboundProtocolState(ProtocolState.CONFIGURATION);
-            });
-
-            // 等 ACK
-            return startConfigurationAckFuture.thenCompose(v -> {
-                if (downstreamClient != null) downstreamClient.disconnect();
-                playerConnection.setDownstreamOutboundProtocolState(ProtocolState.HANDSHAKE);
-                playerConnection.setDownstreamInboundProtocolState(ProtocolState.HANDSHAKE);
-                System.out.println(playerConnection.getUpstreamOutboundProtocolState());
-                System.out.println(playerConnection.getDownstreamOutboundProtocolState());
-                System.out.println(playerConnection.getDownstreamInboundProtocolState());
-
-                downstreamClient = new MinecraftNettyClient(server.getAddress(), this);
-                return downstreamClient.connectAsync()
-                        .thenCompose(c -> downstreamClient.loginAsync())
-                        .thenAccept(c -> {
-                            log.info("下游服务器连接成功，玩家: {}", gameProfile.name());
-                            this.connectedServer = server;
-                            server.getConnectedPlayers().add(this);
-                        })
-                        .exceptionally(throwable -> {
-                            log.error("下游服务器连接失败: {}", throwable.getMessage());
-                            kick("下游服务器连接失败");
-                            return null;
-                        });
-            });
+        if (server == null) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("目标服务器不能为空"));
         }
 
-        if (downstreamClient != null) downstreamClient.disconnect();
+        log.info("准备连接服务器: 玩家={}, 目标服务器={}, 类型={}",
+                gameProfile.name(), server.getName(),
+                connectedServer == null ? "首次连接" : "切换服务器");
 
+        // 确定连接类型
+        ConnectRequest request;
+        if (connectedServer == null) {
+            // 首次连接
+            request = new InitialConnectRequest(this, server);
+        } else {
+            // 服务器切换
+            if (connectedServer.equals(server)) {
+                log.warn("玩家 {} 尝试连接到当前所在的服务器 {}", gameProfile.name(), server.getName());
+                return CompletableFuture.completedFuture(null);
+            }
+            request = new ServerSwitchRequest(this, server);
+        }
+
+        // 设置当前连接请求
+        ConnectRequest oldRequest = currentConnectRequest.getAndSet(request);
+        if (oldRequest != null) {
+            log.warn("玩家 {} 有正在进行的连接请求，将被新请求替换", gameProfile.name());
+        }
+
+        // 执行连接请求
+        return request.execute().whenComplete((result, throwable) -> {
+            // 清除当前连接请求
+            currentConnectRequest.compareAndSet(request, null);
+        });
+    }
+
+    /**
+     * 创建下游客户端
+     */
+    public void createDownstreamClient(ProxiedServer server) {
+        if (downstreamClient != null) {
+            downstreamClient.disconnect();
+        }
         downstreamClient = new MinecraftNettyClient(server.getAddress(), this);
-        return downstreamClient.connectAsync()
-                .thenCompose(v -> downstreamClient.loginAsync())
-                .thenAccept(v -> {
-                    log.info("下游服务器连接成功，玩家: {}", gameProfile.name());
-                    this.connectedServer = server;
-                    server.getConnectedPlayers().add(this);
-                })
-                .exceptionally(throwable -> {
-                    log.error("下游服务器连接失败: {}", throwable.getMessage());
-                    kick("下游服务器连接失败");
-                    return null;
-                });
+    }
+
+    /**
+     * 处理配置确认 - 用于服务器切换流程
+     */
+    public void handleConfigurationAck() {
+        ConnectRequest request = currentConnectRequest.get();
+        if (request instanceof ServerSwitchRequest switchRequest) {
+            switchRequest.onConfigurationAck();
+        }
+    }
+
+    /**
+     * 检查是否正在切换服务器
+     */
+    public boolean isSwitchingServer() {
+        ConnectRequest request = currentConnectRequest.get();
+        return request != null && request.getReason() == ConnectRequest.ConnectReason.SERVER_SWITCH;
     }
 
     public void sendPacket(IMinecraftPacket packet) {
@@ -109,14 +123,27 @@ public class ProxiedPlayer implements CommandSender {
     }
 
     public void kick(String reason) {
-        // playerConnection.getUpstreamChannel().writeAndFlush(new ClientboundDisconnectPacket(reason));
+        log.info("踢出玩家: {} - {}", gameProfile.name(), reason);
+
+        // 关闭连接
         playerConnection.getUpstreamChannel().close();
         if (playerConnection.getDownstreamChannel() != null) {
             playerConnection.getDownstreamChannel().close();
             playerConnection.setDownstreamChannel(null);
         }
+
+        // 断开下游客户端
+        if (downstreamClient != null) {
+            downstreamClient.disconnect();
+        }
+
+        // 从服务器移除玩家
+        if (connectedServer != null) {
+            connectedServer.getConnectedPlayers().remove(this);
+        }
     }
 
+    // Getters and setters
     @Override
     public String getName() {
         return gameProfile.name();
@@ -146,15 +173,15 @@ public class ProxiedPlayer implements CommandSender {
         this.downstreamClient = downstreamClient;
     }
 
-    public Queue<ProxiedServer> getSwitchServerQueue() {
-        return switchServerQueue;
-    }
-
     public CompletableFuture<Void> getStartConfigurationAckFuture() {
         return startConfigurationAckFuture;
     }
 
     public void setStartConfigurationAckFuture(CompletableFuture<Void> startConfigurationAckFuture) {
         this.startConfigurationAckFuture = startConfigurationAckFuture;
+    }
+
+    public ConnectRequest getCurrentConnectRequest() {
+        return currentConnectRequest.get();
     }
 }

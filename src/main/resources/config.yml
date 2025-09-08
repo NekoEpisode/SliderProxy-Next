@@ -10,7 +10,7 @@ proxy:
   ip-forward: false # 是否启用IP转发
   delay-forward: true # 是否启用延迟转发
   online-mode: true # 是否启用在线模式
-  motd: "SliderProxy - 欢迎来到SliderProxy!" # 服务器列表显示的 MOTD (可使用\n换行)
+  motd: "<gradient:#0ebeff:#42fcff>SliderProxy - Next</gradient>" # 服务器列表显示的 MOTD (支持MiniMessage)
   max-players: 20 # 服务器列表显示的最大玩家数
   real-max-players: false # max-players设置是否真的是最大人数(如设为false则玩家加入时满人也可以加入，否则会拒绝加入)
   compress-threshold: 256 # 启用数据包压缩的阈值

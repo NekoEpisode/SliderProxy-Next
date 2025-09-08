@@ -19,7 +19,7 @@ public class ClientboundFinishConfigurationPacket implements IMinecraftPacket {
     public void write(ByteBuf byteBuf) {}
 
     @Override
-    public HandleResult handle(ChannelHandlerContext ctx) { // 127.0.0.1:25565 1.21.8
+    public HandleResult handle(ChannelHandlerContext ctx) {
         return HandleResult.FORWARD;
     }
 }

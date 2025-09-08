@@ -50,7 +50,7 @@ public class DownstreamPacketDecoder extends ByteToMessageDecoder {
             );
 
             if (packetInfo == null) {
-                /*log.debug("❓ 未知下游包: id=0x{}, state={}", Integer.toHexString(packetId), state);*/
+                // log.debug("❓ 未知下游包: id=0x{}, state={}", Integer.toHexString(packetId), state);
                 // 未知包处理
                 if (state == ProtocolState.HANDSHAKE || state == ProtocolState.STATUS || state == ProtocolState.LOGIN) {
                     log.warn("在 {} 阶段收到未知包 ID: {}, 关闭连接", state, packetId);

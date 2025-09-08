@@ -9,16 +9,12 @@ import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.api.server.ServerManager;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
-import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
-import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundLoginSuccessPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.UUID;
 
 public class ServerboundHelloPacket implements IMinecraftPacket {
@@ -47,22 +43,41 @@ public class ServerboundHelloPacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
-        PlayerConnection connection = ctx.channel().attr(PlayerConnection.KEY).get();
+        log.info("处理玩家登录: 用户名={}, UUID={}", username, uuid);
 
-        ProxiedPlayer player = new ProxiedPlayer(new GameProfile(username, uuid), connection);
-        PlayerManager.getInstance().registerPlayer(player);
+        try {
+            PlayerConnection connection = PlayerConnection.fromChannel(ctx.channel());
+            if (connection == null) {
+                log.error("无法获取玩家连接: 用户名={}", username);
+                ctx.channel().close();
+                return HandleResult.UNFORWARD;
+            }
 
-        String defaultServerName = RunningData.configuration.getString("proxy.default-server", "lobby");
-        ProxiedServer defaultServer = ServerManager.getInstance().getServer(defaultServerName);
+            // 创建玩家对象
+            ProxiedPlayer player = new ProxiedPlayer(new GameProfile(username, uuid), connection);
+            PlayerManager.getInstance().registerPlayer(player);
 
-        player.connectTo(defaultServer).thenRun(() -> {
-            connection.getUpstreamChannel().eventLoop().execute(() -> {
-                ClientboundLoginSuccessPacket loginSuccessPacket = new ClientboundLoginSuccessPacket(this.uuid, this.username, List.of());
-                connection.getUpstreamChannel().writeAndFlush(loginSuccessPacket);
+            // 获取默认服务器
+            String defaultServerName = RunningData.configuration.getString("proxy.default-server", "lobby");
+            ProxiedServer defaultServer = ServerManager.getInstance().getServer(defaultServerName);
 
-                connection.setUpstreamOutboundProtocolState(ProtocolState.CONFIGURATION);
+            if (defaultServer == null) {
+                log.error("默认服务器不存在: {}", defaultServerName);
+                player.kick("默认服务器不可用");
+                return HandleResult.UNFORWARD;
+            }
+
+            // 异步连接到默认服务器
+            player.connectTo(defaultServer).whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    log.error("玩家 {} 连接到默认服务器失败", username, throwable);
+                }
             });
-        });
+
+        } catch (Exception e) {
+            log.error("处理玩家登录时发生异常: 用户名={}", username, e);
+            ctx.channel().close();
+        }
 
         return HandleResult.UNFORWARD;
     }

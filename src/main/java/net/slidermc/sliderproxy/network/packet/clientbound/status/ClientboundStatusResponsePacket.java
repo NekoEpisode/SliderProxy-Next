@@ -5,6 +5,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
@@ -26,11 +29,11 @@ public class ClientboundStatusResponsePacket implements IMinecraftPacket {
         this.protocolVersion = 772; // 默认值
     }
 
-    public ClientboundStatusResponsePacket(int max, int online, List<PlayerInfo> sample, String description, boolean enforceSecureChat, String version, int protocolVersion) {
+    public ClientboundStatusResponsePacket(int max, int online, List<PlayerInfo> sample, String minimessageDescription, boolean enforceSecureChat, String version, int protocolVersion) {
         this.max = max;
         this.online = online;
         this.sample = sample;
-        this.description = description;
+        this.description = minimessageDescription;
         this.enforceSecureChat = enforceSecureChat;
         this.version = version;
         this.protocolVersion = protocolVersion;
@@ -65,8 +68,13 @@ public class ClientboundStatusResponsePacket implements IMinecraftPacket {
 
         // description
         if (description != null) {
-            JsonObject descObj = new JsonObject();
-            descObj.addProperty("text", description);
+            Component component = MiniMessage.miniMessage().deserialize(description);
+
+            String jsonDescription = GsonComponentSerializer.gson().serialize(component);
+
+            JsonObject descObj = gson.fromJson(jsonDescription, JsonObject.class);
+            root.add("description", descObj);
+
             root.add("description", descObj);
         }
 

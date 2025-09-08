@@ -47,6 +47,11 @@ public class DownstreamClientHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         ProxiedPlayer player = PlayerManager.getInstance().getPlayerByDownstreamChannel(ctx.channel());
         if (player != null) {
+            if (player.isSwitchingServer()) {
+                log.debug("Downstream channel for {} became inactive during a server switch (expected).", player.getName());
+                return;
+            }
+
             player.kick("下游服务器断开了连接");
         }
     }

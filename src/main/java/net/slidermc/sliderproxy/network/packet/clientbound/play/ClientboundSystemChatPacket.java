@@ -41,7 +41,6 @@ public class ClientboundSystemChatPacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
-        System.out.println("Received message: " + component);
         return HandleResult.FORWARD;
     }
 

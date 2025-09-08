@@ -123,7 +123,8 @@ public class ClientboundLoginPlayPacket implements IMinecraftPacket {
     public HandleResult handle(ChannelHandlerContext ctx) {
         ProxiedPlayer player = PlayerManager.getInstance().getPlayerByDownstreamChannel(ctx.channel());
         if (player != null) {
-            String gradientMessage = "Hello <rainbow>world</rainbow>, isn't <blue><u><click:open_url:'https://docs.advntr.dev/minimessage'>MiniMessage</click></u></blue> fun?";
+            String gradientMessage = "<white>Welcome to </white>" +
+                    "<gradient:#0ebeff:#42fcff>SliderProxy</gradient>";
 
             Component message = MiniMessage.miniMessage().deserialize(gradientMessage);
             player.sendMessage(message);

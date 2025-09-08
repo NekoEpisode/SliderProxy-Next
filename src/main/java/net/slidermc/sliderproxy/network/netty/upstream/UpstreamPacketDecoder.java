@@ -30,11 +30,11 @@ public class UpstreamPacketDecoder extends ByteToMessageDecoder {
             PlayerConnection playerConnection = channelHandlerContext.channel().attr(PlayerConnection.KEY).get();
             ProtocolState state = playerConnection.getUpstreamInboundProtocolState();
 
-            log.debug("📥 收到上游包: id=0x{}, state={}, downstreamConnected={}, remoteAddress={}",
+            /*log.debug("📥 收到上游包: id=0x{}, state={}, downstreamConnected={}, remoteAddress={}",
                     Integer.toHexString(packetId),
                     state,
                     playerConnection.getDownstreamChannel() != null,
-                    channelHandlerContext.channel().remoteAddress());
+                    channelHandlerContext.channel().remoteAddress());*/
 
             PacketInfo packetInfo = NetworkPacketRegistry.getInstance().getPacketInfo(
                     NetworkPacketRegistry.getInstance().getPacketClass(
@@ -43,7 +43,7 @@ public class UpstreamPacketDecoder extends ByteToMessageDecoder {
             );
 
             if (packetInfo == null) {
-                /*;log.debug("❓ 未知上游包: id=0x{}, state={}", Integer.toHexString(packetId), state);*/
+                // log.debug("❓ 未知上游包: id=0x{}, state={}", Integer.toHexString(packetId), state);
                 // 未知包处理
                 if (state == ProtocolState.HANDSHAKE || state == ProtocolState.STATUS || state == ProtocolState.LOGIN) {
                     log.warn("在 {} 阶段收到未知包 ID: {}, 关闭连接", state, packetId);
