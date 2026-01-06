@@ -26,7 +26,9 @@ public class ServerboundStatusRequestPacket implements IMinecraftPacket {
         List<ClientboundStatusResponsePacket.PlayerInfo> playerInfos = new ArrayList<>();
 
         for (ProxiedPlayer player : PlayerManager.getInstance().getAllPlayers()) {
-            playerInfos.add(new ClientboundStatusResponsePacket.PlayerInfo(player.getGameProfile().uuid(), player.getName()));
+            if (player.getClientInformation().isAllowServerListings()) {
+                playerInfos.add(new ClientboundStatusResponsePacket.PlayerInfo(player.getGameProfile().uuid(), player.getName()));
+            }
         }
 
         ClientboundStatusResponsePacket responsePacket = new ClientboundStatusResponsePacket(
