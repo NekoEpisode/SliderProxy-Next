@@ -171,7 +171,7 @@ public class ClientInformation {
     }
 
     public void setUpdated(boolean updated) {
-        if (this.isUpdated) throw new IllegalStateException("Cannot set 'updated' state when 'updated' is already set to true");
+        if (this.isUpdated && !updated) throw new IllegalStateException("Cannot set 'updated' state to false when 'updated' is already set to true");
         isUpdated = updated;
     }
 

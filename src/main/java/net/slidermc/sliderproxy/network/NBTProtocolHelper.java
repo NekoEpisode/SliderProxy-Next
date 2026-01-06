@@ -3,11 +3,7 @@ package net.slidermc.sliderproxy.network;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
-import net.kyori.adventure.nbt.BinaryTag;
-import net.kyori.adventure.nbt.BinaryTagIO;
-import net.kyori.adventure.nbt.BinaryTagTypes;
-import net.kyori.adventure.nbt.CompoundBinaryTag;
-import net.kyori.adventure.nbt.StringBinaryTag;
+import net.kyori.adventure.nbt.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
