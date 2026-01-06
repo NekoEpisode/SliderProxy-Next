@@ -3,7 +3,8 @@ package net.slidermc.sliderproxy.network;
 import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.UUID;
+import java.util.function.Function;
 
 public class MinecraftProtocolHelper {
     /**
@@ -204,5 +205,29 @@ public class MinecraftProtocolHelper {
             size++;
         } while (value != 0);
         return size;
+    }
+
+    /**
+     * 读取枚举值
+     */
+    public static <T extends Enum<T> & ProtocolEnum> T readEnum(ByteBuf buf, Function<Integer, T> fromId) {
+        int id = readVarInt(buf);
+        T value = fromId.apply(id);
+        if (value == null) {
+            throw new IllegalArgumentException("Invalid enum ID: " + id);
+        }
+        return value;
+    }
+
+    /**
+     * 写入枚举值
+     */
+    public static <T extends Enum<T> & ProtocolEnum> void writeEnum(ByteBuf buf, T value) {
+        writeVarInt(buf, value.getId());
+    }
+
+    // 创建一个标记接口，用于标记有ID的枚举
+    public interface ProtocolEnum {
+        int getId();
     }
 }

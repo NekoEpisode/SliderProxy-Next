@@ -5,6 +5,8 @@ import net.slidermc.sliderproxy.api.command.CommandSender;
 import net.slidermc.sliderproxy.api.player.connectionrequest.ConnectRequest;
 import net.slidermc.sliderproxy.api.player.connectionrequest.InitialConnectRequest;
 import net.slidermc.sliderproxy.api.player.connectionrequest.ServerSwitchRequest;
+import net.slidermc.sliderproxy.api.player.data.ClientInformation;
+import net.slidermc.sliderproxy.api.player.data.GameProfile;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
@@ -21,6 +23,7 @@ public class ProxiedPlayer implements CommandSender {
     private static final Logger log = LoggerFactory.getLogger(ProxiedPlayer.class);
 
     private final GameProfile gameProfile;
+    private final ClientInformation clientInformation = new ClientInformation();
     private final PlayerConnection playerConnection;
     private volatile MinecraftNettyClient downstreamClient = null;
     private volatile ProxiedServer connectedServer = null;
@@ -59,10 +62,6 @@ public class ProxiedPlayer implements CommandSender {
             return CompletableFuture.failedFuture(new IllegalArgumentException("目标服务器不能为空"));
         }
 
-        log.info("准备连接服务器: 玩家={}, 目标服务器={}, 类型={}",
-                gameProfile.name(), server.getName(),
-                connectedServer == null ? "首次连接" : "切换服务器");
-
         // 确定连接类型
         ConnectRequest request;
         if (connectedServer == null) {
@@ -71,17 +70,13 @@ public class ProxiedPlayer implements CommandSender {
         } else {
             // 服务器切换
             if (connectedServer.equals(server)) {
-                log.warn("玩家 {} 尝试连接到当前所在的服务器 {}", gameProfile.name(), server.getName());
                 return CompletableFuture.completedFuture(null);
             }
             request = new ServerSwitchRequest(this, server);
         }
 
         // 设置当前连接请求
-        ConnectRequest oldRequest = currentConnectRequest.getAndSet(request);
-        if (oldRequest != null) {
-            log.warn("玩家 {} 有正在进行的连接请求，将被新请求替换", gameProfile.name());
-        }
+        currentConnectRequest.set(request);
 
         // 执行连接请求
         return request.execute().whenComplete((result, throwable) -> {
@@ -123,8 +118,6 @@ public class ProxiedPlayer implements CommandSender {
     }
 
     public void kick(String reason) {
-        log.info("踢出玩家: {} - {}", gameProfile.name(), reason);
-
         // 关闭连接
         playerConnection.getUpstreamChannel().close();
         if (playerConnection.getDownstreamChannel() != null) {
@@ -183,5 +176,9 @@ public class ProxiedPlayer implements CommandSender {
 
     public ConnectRequest getCurrentConnectRequest() {
         return currentConnectRequest.get();
+    }
+
+    public ClientInformation getClientInformation() {
+        return clientInformation;
     }
 }

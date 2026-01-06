@@ -1,0 +1,46 @@
+{
+  "sliderproxy.startup": "SliderProxy started on %s%:%s1%",
+
+  "sliderproxy.config.save.error": "Error occurred while saving config file",
+  "sliderproxy.config.creating": "Creating config file",
+  "sliderproxy.config.create.error": "Error occurred while creating config file",
+  "sliderproxy.config.create.notfound": "Config template not found",
+  "sliderproxy.config.create.success": "Config file created",
+  "sliderproxy.config.servers.notfound": "No servers found in config",
+  "sliderproxy.config.server.invalid": "Server '%s%' config is invalid",
+  "sliderproxy.config.server.loaded": "Loaded server: %s% (address: %s1%:%s2%)",
+  "sliderproxy.config.servers.loaded": "Loaded %s% servers",
+  "sliderproxy.config.defaultserver.notfound": "Default server '%s%' not found",
+  "sliderproxy.config.language.set": "Set interface language to: %s%",
+
+  "sliderproxy.plugins.loaded": "Loaded %s% plugins",
+  "sliderproxy.plugins.initialized": "Plugin system initialized with %s% plugins",
+
+  "sliderproxy.translate.load.success": "Loaded language file: %s%",
+  "sliderproxy.translate.load.failed": "Failed to load language file: %s%",
+  "sliderproxy.translate.register": "Registered language: %s%",
+  "sliderproxy.translate.remove": "Removed language: %s%",
+
+  "sliderproxy.network.connection.error.get": "Cannot get player connection: username=%s%",
+  "sliderproxy.network.connection.connected": "[connected player] %s% (%s1%)",
+  "sliderproxy.network.connection.disconnected": "[disconnected player] %s%",
+  "sliderproxy.network.connection.defaultserver.notfound": "Default server not found: %s%",
+  "sliderproxy.network.connection.defaultserver.unavailable": "Default server unavailable",
+  "sliderproxy.network.connection.defaultserver.failed": "Player %s% failed to connect to default server",
+  "sliderproxy.network.connection.exception": "Exception while handling player login: username=%s%",
+  "sliderproxy.network.connection.kick.connect": "Cannot connect to server: %s%",
+  "sliderproxy.network.connection.kick.downstream": "Downstream server disconnected",
+  "sliderproxy.network.connection.message.switchfailed": "Failed to switch server: %s%",
+
+  "sliderproxy.network.server.connection.success": "[server connection] %s% -> %s1%",
+  "sliderproxy.network.server.connection.failed": "[server connection failed] %s% -> %s1%: %s2%",
+  "sliderproxy.network.server.connection.kick.default": "Cannot connect to default server: %s%\n%s1%",
+
+  "sliderproxy.network.server.switch.success": "[server switch] %s% -> %s1%",
+  "sliderproxy.network.server.switch.failed": "[server switch failed] %s% -> %s1%: %s2%",
+  "sliderproxy.network.server.switch.kick": "§cFailed to switch server: %s%",
+  "sliderproxy.network.server.switch.kick.error": "§cError: %s%",
+
+  "sliderproxy.command.server.noargs": "<red>Please enter a server name!</red>",
+  "sliderproxy.command.server.notfound": "<red>Server %s% not found!</red>"
+}

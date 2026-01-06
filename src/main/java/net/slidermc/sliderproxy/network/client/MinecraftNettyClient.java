@@ -7,24 +7,40 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.AttributeKey;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
+import net.slidermc.sliderproxy.api.player.data.ClientInformation;
 import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.netty.downstream.DownstreamChannelInitializer;
+import net.slidermc.sliderproxy.network.packet.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.handshake.ServerboundHandshakePacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundHelloPacket;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * 下游 Minecraft 服务器连接客户端
+ * 每个实例独立管理自己的协议状态，与 PlayerConnection 解耦
+ */
 public class MinecraftNettyClient {
     private static final Logger log = LoggerFactory.getLogger(MinecraftNettyClient.class);
+    
+    public static final AttributeKey<MinecraftNettyClient> KEY = AttributeKey.valueOf("downstream_client");
+    
     private final InetSocketAddress address;
     private Channel channel;
     private EventLoopGroup group;
     private boolean connected = false;
     private final ProxiedPlayer bindPlayer;
+
+    // 下游连接自主管理的协议状态
+    private volatile ProtocolState inboundProtocolState = ProtocolState.HANDSHAKE;
+    private volatile ProtocolState outboundProtocolState = ProtocolState.HANDSHAKE;
 
     // 用于等待状态变化的 CompletableFuture
     private CompletableFuture<Void> loginFuture;
@@ -47,7 +63,8 @@ public class MinecraftNettyClient {
     }
 
     /**
-     * 连接到指定地址服务器并自动设置玩家的PlayerConnection.downstreamChannel
+     * 连接到指定地址服务器
+     * 注意：不再自动设置 PlayerConnection.downstreamChannel，由调用方控制
      */
     private void connect() throws InterruptedException {
         group = new NioEventLoopGroup();
@@ -55,16 +72,12 @@ public class MinecraftNettyClient {
         bootstrap.group(group)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.TCP_NODELAY, true)
-                .handler(new DownstreamChannelInitializer(bindPlayer));
+                .handler(new DownstreamChannelInitializer(bindPlayer, this));
 
         ChannelFuture future = bootstrap.connect(address).sync();
         this.channel = future.channel();
-        bindPlayer.getPlayerConnection().setDownstreamChannel(channel);
-
-        // 设置初始协议状态为 HANDSHAKE
-        bindPlayer.getPlayerConnection().setDownstreamInboundProtocolState(ProtocolState.HANDSHAKE);
-        bindPlayer.getPlayerConnection().setDownstreamOutboundProtocolState(ProtocolState.HANDSHAKE);
-
+        
+        // 协议状态由 MinecraftNettyClient 自主管理，初始化时已设为 HANDSHAKE
         connected = true;
     }
 
@@ -94,7 +107,7 @@ public class MinecraftNettyClient {
     }
 
     private CompletableFuture<Void> doLogin() {
-        if (bindPlayer.getPlayerConnection().getDownstreamInboundProtocolState() != ProtocolState.HANDSHAKE) {
+        if (inboundProtocolState != ProtocolState.HANDSHAKE) {
             return CompletableFuture.failedFuture(new IllegalStateException("Client not in HANDSHAKE state"));
         }
 
@@ -106,8 +119,8 @@ public class MinecraftNettyClient {
             channel.writeAndFlush(handshakePacket).addListener(future -> {
                 if (future.isSuccess()) {
                     // 握手包发送成功后，切换到 LOGIN 状态
-                    bindPlayer.getPlayerConnection().setDownstreamInboundProtocolState(ProtocolState.LOGIN);
-                    bindPlayer.getPlayerConnection().setDownstreamOutboundProtocolState(ProtocolState.LOGIN);
+                    setInboundProtocolState(ProtocolState.LOGIN);
+                    setOutboundProtocolState(ProtocolState.LOGIN);
 
                     // 然后发送登录包
                     ServerboundHelloPacket helloPacket = new ServerboundHelloPacket(bindPlayer.getGameProfile().name(), bindPlayer.getGameProfile().uuid());
@@ -130,7 +143,10 @@ public class MinecraftNettyClient {
 
     public void disconnect() {
         if (channel != null) {
-            bindPlayer.getPlayerConnection().setDownstreamChannel(null);
+            // 只有当前 channel 是 PlayerConnection 的下游 channel 时才清除引用
+            if (bindPlayer.getPlayerConnection().getDownstreamChannel() == channel) {
+                bindPlayer.getPlayerConnection().setDownstreamChannel(null);
+            }
             channel.close();
         }
         if (group != null) {
@@ -153,7 +169,58 @@ public class MinecraftNettyClient {
         }
     }
 
-    // Getters and setters
+    // ========== 协议状态管理 ==========
+    
+    /**
+     * 获取下游入站协议状态（代理接收服务器数据时使用的状态）
+     */
+    public ProtocolState getInboundProtocolState() {
+        return inboundProtocolState;
+    }
+
+    /**
+     * 获取下游出站协议状态（代理发送数据给服务器时使用的状态）
+     */
+    public ProtocolState getOutboundProtocolState() {
+        return outboundProtocolState;
+    }
+
+    /**
+     * 设置下游入站协议状态
+     */
+    public void setInboundProtocolState(@NotNull ProtocolState state) {
+        this.inboundProtocolState = state;
+    }
+
+    /**
+     * 设置下游出站协议状态
+     */
+    public void setOutboundProtocolState(@NotNull ProtocolState state) {
+        this.outboundProtocolState = state;
+        if (this.outboundProtocolState == ProtocolState.CONFIGURATION) {
+            // 向下游服务器发送ClientInformation包，防止下游服务器不知道客户端设置
+            ClientInformation clientInformation = bindPlayer.getClientInformation();
+            if (clientInformation.isUpdated()) {
+                channel.writeAndFlush(new ServerboundClientInformationConfigurationPacket(clientInformation));
+                log.debug("已为玩家 {} 的下游服务器发送ClientInformation包", bindPlayer.getGameProfile().name());
+            } else {
+                log.debug("发现玩家 {} 的ClientInformation不为updated，终止发送下游服务器的ClientInformation包", bindPlayer.getGameProfile().name());
+            }
+        }
+    }
+
+    /**
+     * 从 Channel 获取绑定的 MinecraftNettyClient
+     */
+    @Nullable
+    public static MinecraftNettyClient fromChannel(Channel channel) {
+        return channel.attr(KEY).get();
+    }
+
+    // ========== Getters ==========
+    
     public Channel getChannel() { return channel; }
     public InetSocketAddress getAddress() { return address; }
+    public ProxiedPlayer getBindPlayer() { return bindPlayer; }
+    public boolean isConnected() { return connected; }
 }

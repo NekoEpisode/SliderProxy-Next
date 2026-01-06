@@ -8,7 +8,39 @@
   "sliderproxy.config.create.success": "已创建配置文件",
   "sliderproxy.config.servers.notfound": "未找到服务器配置",
   "sliderproxy.config.server.invalid": "服务器 '%s%' 配置无效",
-  "sliderproxy.config.server.loaded": "已加载服务器: %s% (地址: %s1%: %s2%)",
+  "sliderproxy.config.server.loaded": "已加载服务器: %s% (地址: %s1%:%s2%)",
   "sliderproxy.config.servers.loaded": "已加载 %s% 个服务器",
-  "sliderproxy.config.defaultserver.notfound": "默认服务器 '%s%' 不存在"
+  "sliderproxy.config.defaultserver.notfound": "默认服务器 '%s%' 不存在",
+  "sliderproxy.config.language.set": "已设置界面语言为: %s%",
+
+  "sliderproxy.plugins.loaded": "已加载 %s% 个插件",
+  "sliderproxy.plugins.initialized": "插件系统已初始化，共 %s% 个插件",
+
+  "sliderproxy.translate.load.success": "已加载语言文件: %s%",
+  "sliderproxy.translate.load.failed": "加载语言文件失败: %s%",
+  "sliderproxy.translate.register": "注册语言: %s%",
+  "sliderproxy.translate.remove": "移除语言: %s%",
+
+  "sliderproxy.network.connection.error.get": "无法获取玩家连接: 用户名=%s%",
+  "sliderproxy.network.connection.connected": "[已连接玩家] %s% (%s1%)",
+  "sliderproxy.network.connection.disconnected": "[断开连接玩家] %s%",
+  "sliderproxy.network.connection.defaultserver.notfound": "默认服务器不存在: %s%",
+  "sliderproxy.network.connection.defaultserver.unavailable": "默认服务器不可用",
+  "sliderproxy.network.connection.defaultserver.failed": "玩家 %s% 连接到默认服务器失败",
+  "sliderproxy.network.connection.exception": "处理玩家登录时发生异常: 用户名=%s%",
+  "sliderproxy.network.connection.kick.connect": "无法连接到服务器: %s%",
+  "sliderproxy.network.connection.kick.downstream": "下游服务器断开了连接",
+  "sliderproxy.network.connection.message.switchfailed": "切换服务器失败: %s%",
+
+  "sliderproxy.network.server.connection.success": "[服务器连接] %s% -> %s1%",
+  "sliderproxy.network.server.connection.failed": "[服务器连接失败] %s% -> %s1%: %s2%",
+  "sliderproxy.network.server.connection.kick.default": "无法连接到默认服务器: %s%\n%s1%",
+
+  "sliderproxy.network.server.switch.success": "[服务器切换] %s% -> %s1%",
+  "sliderproxy.network.server.switch.failed": "[服务器切换失败] %s% -> %s1%: %s2%",
+  "sliderproxy.network.server.switch.kick": "§c切换服务器失败: %s%",
+  "sliderproxy.network.server.switch.kick.error": "§c错误: %s%",
+
+  "sliderproxy.command.server.noargs": "<red>请输入服务器名！</red>",
+  "sliderproxy.command.server.notfound": "<red>服务器 %s% 不存在！</red>"
 }

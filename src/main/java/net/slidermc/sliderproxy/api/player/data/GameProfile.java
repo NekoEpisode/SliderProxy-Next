@@ -1,4 +1,4 @@
-package net.slidermc.sliderproxy.api.player;
+package net.slidermc.sliderproxy.api.player.data;
 
 import java.util.UUID;
 

@@ -2,11 +2,9 @@ package net.slidermc.sliderproxy.network.packet.clientbound.login;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import net.slidermc.sliderproxy.api.player.PlayerManager;
-import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.ProtocolState;
-import net.slidermc.sliderproxy.network.connection.PlayerConnection;
+import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundLoginAcknowledgePacket;
@@ -67,15 +65,14 @@ public class ClientboundLoginSuccessPacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
-        ProxiedPlayer player = PlayerManager.getInstance().getPlayerByDownstreamChannel(ctx.channel());
-        if (player != null) {
-            PlayerConnection playerConnection = player.getPlayerConnection();
-            if (playerConnection != null && playerConnection.getDownstreamChannel() != null) {
-                playerConnection.getDownstreamChannel().writeAndFlush(new ServerboundLoginAcknowledgePacket());
-                playerConnection.setDownstreamInboundProtocolState(ProtocolState.CONFIGURATION);
-                playerConnection.setDownstreamOutboundProtocolState(ProtocolState.CONFIGURATION);
-                player.getDownstreamClient().completeLogin();
-            }
+        // 从 Channel 获取 MinecraftNettyClient
+        MinecraftNettyClient client = MinecraftNettyClient.fromChannel(ctx.channel());
+        if (client != null) {
+            // 发送 LoginAck 并切换协议状态
+            ctx.channel().writeAndFlush(new ServerboundLoginAcknowledgePacket());
+            client.setInboundProtocolState(ProtocolState.CONFIGURATION);
+            client.setOutboundProtocolState(ProtocolState.CONFIGURATION);
+            client.completeLogin();
         }
         return HandleResult.UNFORWARD;
     }

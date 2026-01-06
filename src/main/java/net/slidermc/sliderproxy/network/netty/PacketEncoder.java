@@ -6,6 +6,7 @@ import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.ProtocolState;
+import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
 import net.slidermc.sliderproxy.network.packet.NetworkPacketRegistry;
@@ -35,18 +36,25 @@ public class PacketEncoder extends ChannelOutboundHandlerAdapter {
             return;
         }
 
-        PlayerConnection connection = PlayerConnection.fromChannel(ctx.channel());
-        if (connection == null) {
-            promise.setFailure(new IllegalStateException("No PlayerConnection found for channel"));
-            ctx.close();
-            return;
-        }
-
         ProtocolState state;
         if (direction == PacketDirection.CLIENTBOUND) {
+            // 上游方向：从 PlayerConnection 获取状态
+            PlayerConnection connection = PlayerConnection.fromChannel(ctx.channel());
+            if (connection == null) {
+                promise.setFailure(new IllegalStateException("No PlayerConnection found for upstream channel"));
+                ctx.close();
+                return;
+            }
             state = connection.getUpstreamOutboundProtocolState();
-        } else { // SERVERBOUND
-            state = connection.getDownstreamOutboundProtocolState();
+        } else {
+            // 下游方向：从 MinecraftNettyClient 获取状态
+            MinecraftNettyClient client = MinecraftNettyClient.fromChannel(ctx.channel());
+            if (client == null) {
+                promise.setFailure(new IllegalStateException("No MinecraftNettyClient found for downstream channel"));
+                ctx.close();
+                return;
+            }
+            state = client.getOutboundProtocolState();
         }
 
         if (state == null) {

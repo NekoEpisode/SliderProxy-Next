@@ -1,14 +1,12 @@
 package net.slidermc.sliderproxy.api.player.connectionrequest;
 
 import io.netty.channel.Channel;
-import net.slidermc.sliderproxy.RunningData;
+import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.network.ProtocolState;
-import net.slidermc.sliderproxy.network.netty.CompressionDecoder;
-import net.slidermc.sliderproxy.network.netty.CompressionEncoder;
 import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundLoginSuccessPacket;
-import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundSetCompressionPacket;
+import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +15,11 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * 首次连接请求 - 处理玩家初始登录流程
+ * 
+ * 流程：
+ * 1. 先连接下游服务器并完成登录（到 CONFIGURATION 阶段）
+ * 2. 下游成功后，再发送 LoginSuccess 给客户端
+ * 3. 如果下游失败，断开客户端连接并显示错误消息
  */
 public class InitialConnectRequest extends ConnectRequest {
     private static final Logger log = LoggerFactory.getLogger(InitialConnectRequest.class);
@@ -27,56 +30,64 @@ public class InitialConnectRequest extends ConnectRequest {
 
     @Override
     protected CompletableFuture<Void> preConnect() {
-        // 首次连接不需要特殊的准备工作
-        // 协议状态已经在握手阶段设置完毕
-        log.debug("首次连接准备: 玩家={}", player.getName());
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
+    protected CompletableFuture<Void> connectToTarget() {
+        // 创建下游连接
+        player.createDownstreamClient(targetServer);
+
+        // 先连接下游服务器
+        return player.getDownstreamClient().connectAsync()
+                .thenCompose(v -> player.getDownstreamClient().loginAsync())
+                .thenAccept(v -> {
+                    // 设置下游 channel 并更新 PlayerManager 映射
+                    Channel downstreamChannel = player.getDownstreamClient().getChannel();
+                    player.getPlayerConnection().setDownstreamChannel(downstreamChannel);
+                    PlayerManager.getInstance().updateDownstreamChannel(player, downstreamChannel);
+
+                    updatePlayerConnection();
+                    log.info(TranslateManager.translate("sliderproxy.network.server.connection.success", player.getName(), targetServer.getName()));
+                });
+    }
+
+    @Override
     protected CompletableFuture<Void> postConnect() {
-        // 发送登录成功包并切换到配置状态
+        // 下游连接成功后，发送登录成功包给客户端
         return CompletableFuture.runAsync(() -> {
             player.getPlayerConnection().getUpstreamChannel().eventLoop().execute(() -> {
                 try {
                     Channel ch = player.getPlayerConnection().getUpstreamChannel();
-                    int threshold = RunningData.configuration.getInt("proxy.compress-threshold");
 
-                    ch.eventLoop().execute(() -> { // FIXME: 我也不知道为什么这里一给上游加压缩器就爆炸，可能需要修复，给下游加似乎没问题
-                       /* // 先明文发出 Set Compression
-                        ch.writeAndFlush(new ClientboundSetCompressionPacket(threshold))
-                                .addListener(f -> {
-                                    if (!f.isSuccess()) {
-                                        // 如果发送失败就别再装编码器了
-                                        return;
-                                    }
-                                    // 确保发完后再装压缩器
-                                    ch.pipeline().addAfter("frame-decoder", "compression-decoder",
-                                            new CompressionDecoder(threshold));
-                                    ch.pipeline().addBefore("packet-encoder", "compression-encoder",
-                                            new CompressionEncoder(threshold));
-                                });*/
+                    // 发送登录成功包
+                    ClientboundLoginSuccessPacket loginSuccessPacket = new ClientboundLoginSuccessPacket(
+                            player.getGameProfile().uuid(),
+                            player.getGameProfile().name(),
+                            List.of()
+                    );
+                    ch.writeAndFlush(loginSuccessPacket);
 
-                        // 发送登录成功包
-                        ClientboundLoginSuccessPacket loginSuccessPacket = new ClientboundLoginSuccessPacket(
-                                player.getGameProfile().uuid(),
-                                player.getGameProfile().name(),
-                                List.of()
-                        );
-                        player.getPlayerConnection().getUpstreamChannel().writeAndFlush(loginSuccessPacket);
-
-                        // 切换到配置状态
-                        player.getPlayerConnection().setUpstreamOutboundProtocolState(ProtocolState.CONFIGURATION);
-                    });
-
-                    log.info("首次连接完成: 玩家={}, 服务器={}",
-                            player.getName(), targetServer.getName());
+                    // 切换上游到配置状态
+                    player.getPlayerConnection().setUpstreamOutboundProtocolState(ProtocolState.CONFIGURATION);
 
                 } catch (Exception e) {
-                    log.error("首次连接后处理失败: 玩家={}", player.getName(), e);
                     throw new RuntimeException(e);
                 }
             });
         });
+    }
+
+    @Override
+    protected void handleConnectFailure(Throwable throwable) {
+        // 断开下游客户端（如果有）
+        if (player.getDownstreamClient() != null) {
+            player.getDownstreamClient().disconnect();
+        }
+
+        log.error(TranslateManager.translate("sliderproxy.network.server.connection.failed", player.getName(), targetServer.getName(), throwable.getMessage()));
+
+        // 客户端还在 LOGIN 阶段，直接断开并显示错误消息
+        player.kick(TranslateManager.translate("sliderproxy.network.server.connection.kick.default", targetServer.getName(), throwable.getMessage()));
     }
 }

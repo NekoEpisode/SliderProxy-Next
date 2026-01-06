@@ -1,6 +1,8 @@
 package net.slidermc.sliderproxy;
 
 import net.slidermc.sliderproxy.api.config.YamlConfiguration;
+import net.slidermc.sliderproxy.api.plugin.PluginManager;
+import net.slidermc.sliderproxy.api.plugin.PluginManagerHolder;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.api.server.ServerManager;
 import net.slidermc.sliderproxy.network.ProtocolState;
@@ -18,12 +20,14 @@ import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSyste
 import net.slidermc.sliderproxy.network.packet.clientbound.status.ClientboundPongResponsePacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.status.ClientboundStatusResponsePacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.ServerboundPluginMessagePacket;
+import net.slidermc.sliderproxy.network.packet.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.configuration.ServerboundFinishConfigurationAckPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.configuration.ServerboundKeepAliveConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.handshake.ServerboundHandshakePacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundHelloPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundLoginAcknowledgePacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.play.ServerboundChatCommandPacket;
+import net.slidermc.sliderproxy.network.packet.serverbound.play.ServerboundClientInformationPlayPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.play.ServerboundConfigurationAckPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.play.ServerboundKeepAlivePlayPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.status.ServerboundPingRequestPacket;
@@ -43,6 +47,7 @@ public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
     public static void main(String[] args) throws FileNotFoundException {
+        // 初始化语言系统
         initLanguages();
 
         registerClientboundPackets();
@@ -68,6 +73,16 @@ public class Main {
         RunningData.configuration = yamlConfiguration;
         ServerManager serverManager = ServerManager.getInstance();
 
+        // 读取并设置语言配置
+        String language = yamlConfiguration.getString("proxy.language", "zh_cn");
+        if (TranslateManager.isLanguageRegistered(language)) {
+            TranslateManager.setCurrentLanguage(language);
+            log.info(TranslateManager.translate("sliderproxy.config.language.set", language));
+        }
+
+        // 初始化插件系统
+        initPlugins();
+
         // 读取代理配置
         String host = yamlConfiguration.getString("proxy.host", "0.0.0.0");
         int port = yamlConfiguration.getInt("proxy.port", 25565);
@@ -77,6 +92,28 @@ public class Main {
 
         SliderProxyServer server = new SliderProxyServer(new InetSocketAddress(host, port));
         server.run();
+    }
+
+    /**
+     * 初始化插件系统
+     */
+    private static void initPlugins() {
+        File pluginsFolder = new File("./plugins");
+        if (!pluginsFolder.exists()) {
+            pluginsFolder.mkdirs();
+        }
+
+        // 初始化插件管理器
+        PluginManagerHolder.initialize(pluginsFolder);
+
+        // 加载所有插件
+        PluginManager pluginManager = PluginManagerHolder.getInstance();
+        pluginManager.loadPlugins();
+
+        // 启用所有插件
+        pluginManager.enablePlugins();
+
+        log.info(TranslateManager.translate("sliderproxy.plugins.initialized", pluginManager.getLoadedPlugins().size()));
     }
 
     /**
@@ -165,6 +202,7 @@ public class Main {
 
     public static void initLanguages() {
         TranslateManager.loadFromResource("zh_cn", "lang/zh_cn.json");
+        TranslateManager.loadFromResource("en_us", "lang/en_us.json");
     }
 
     private static void registerClientboundPackets() {
@@ -200,10 +238,12 @@ public class Main {
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.CONFIGURATION, 0x04, ServerboundKeepAliveConfigurationPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.CONFIGURATION, 0x03, ServerboundFinishConfigurationAckPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.CONFIGURATION, 0x02, ServerboundPluginMessagePacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.CONFIGURATION, 0x00, ServerboundClientInformationConfigurationPacket.class);
 
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x1B, ServerboundKeepAlivePlayPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x15, ServerboundPluginMessagePacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x06, ServerboundChatCommandPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x0F, ServerboundConfigurationAckPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x0D, ServerboundClientInformationPlayPacket.class);
     }
 }

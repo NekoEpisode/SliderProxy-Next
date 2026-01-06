@@ -217,7 +217,6 @@ public final class TranslateManager {
      */
     public static void setCurrentLanguage(@NotNull String languageCode) {
         if (!isLanguageRegistered(languageCode)) {
-            log.warn("尝试设置不存在的语言: {}", languageCode);
             return;
         }
         TranslateManager.currentLanguage = languageCode;

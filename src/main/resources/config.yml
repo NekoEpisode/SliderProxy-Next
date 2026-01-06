@@ -14,6 +14,7 @@ proxy:
   max-players: 20 # 服务器列表显示的最大玩家数
   real-max-players: false # max-players设置是否真的是最大人数(如设为false则玩家加入时满人也可以加入，否则会拒绝加入)
   compress-threshold: 256 # 启用数据包压缩的阈值
+  language: "zh_cn" # 界面语言 (可选: zh_cn, en_us)
 
 #子服务器设置
 servers:

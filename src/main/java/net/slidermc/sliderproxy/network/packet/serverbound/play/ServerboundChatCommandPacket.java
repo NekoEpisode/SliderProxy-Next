@@ -8,9 +8,9 @@ import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.api.server.ServerManager;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
-import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
+import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,14 +43,14 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
         if (command.startsWith("server")) {
             String[] commands = command.split(" ");
             if (commands.length < 2) {
-                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>请输入服务器名！</red>"));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(TranslateManager.translate("sliderproxy.command.server.noargs")));
                 return HandleResult.UNFORWARD;
             }
             ProxiedServer target = ServerManager.getInstance().getServer(commands[1]);
             if (target != null) {
                 player.connectTo(target);
             } else {
-                player.sendMessage(MiniMessage.miniMessage().deserialize("<red>服务器不存在！</red>"));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(TranslateManager.translate("sliderproxy.command.server.notfound", commands[1])));
             }
             return HandleResult.UNFORWARD;
         }

@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import net.slidermc.sliderproxy.network.ProtocolState;
+import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
@@ -31,7 +32,7 @@ public class ServerboundFinishConfigurationAckPacket implements IMinecraftPacket
             if (downstreamChannel.eventLoop().inEventLoop()) {
                 downstreamChannel.writeAndFlush(this).addListener(future -> {
                     if (future.isSuccess()) {
-                        updateProtocolStates(connection);
+                        updateProtocolStates(connection, downstreamChannel);
                     } else {
                         log.error("Failed to send FinishConfigurationAck to downstream", future.cause());
                         ctx.channel().close();
@@ -41,7 +42,7 @@ public class ServerboundFinishConfigurationAckPacket implements IMinecraftPacket
                 downstreamChannel.eventLoop().execute(() -> {
                     downstreamChannel.writeAndFlush(this).addListener(future -> {
                         if (future.isSuccess()) {
-                            updateProtocolStates(connection);
+                            updateProtocolStates(connection, downstreamChannel);
                         } else {
                             log.error("Failed to send FinishConfigurationAck to downstream", future.cause());
                             ctx.channel().close();
@@ -50,16 +51,24 @@ public class ServerboundFinishConfigurationAckPacket implements IMinecraftPacket
                 });
             }
         } else {
-            updateProtocolStates(connection);
+            // 没有下游连接时，只更新上游状态
+            connection.setUpstreamInboundProtocolState(ProtocolState.PLAY);
+            connection.setUpstreamOutboundProtocolState(ProtocolState.PLAY);
         }
 
         return HandleResult.UNFORWARD;
     }
 
-    private void updateProtocolStates(PlayerConnection connection) {
+    private void updateProtocolStates(PlayerConnection connection, Channel downstreamChannel) {
+        // 更新上游状态（PlayerConnection 管理）
         connection.setUpstreamInboundProtocolState(ProtocolState.PLAY);
         connection.setUpstreamOutboundProtocolState(ProtocolState.PLAY);
-        connection.setDownstreamInboundProtocolState(ProtocolState.PLAY);
-        connection.setDownstreamOutboundProtocolState(ProtocolState.PLAY);
+        
+        // 更新下游状态（MinecraftNettyClient 自主管理）
+        MinecraftNettyClient client = MinecraftNettyClient.fromChannel(downstreamChannel);
+        if (client != null) {
+            client.setInboundProtocolState(ProtocolState.PLAY);
+            client.setOutboundProtocolState(ProtocolState.PLAY);
+        }
     }
 }

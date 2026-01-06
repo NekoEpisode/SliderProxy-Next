@@ -2,6 +2,7 @@ package net.slidermc.sliderproxy.api.player.connectionrequest;
 
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
+import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +28,6 @@ public abstract class ConnectRequest {
      * 执行连接请求
      */
     public final CompletableFuture<Void> execute() {
-        log.info("开始执行连接请求: 玩家={}, 目标服务器={}, 原因={}",
-                player.getName(), targetServer.getName(), reason);
-
         return preConnect()
                 .thenCompose(v -> connectToTarget())
                 .thenCompose(v -> postConnect())
@@ -58,9 +56,6 @@ public abstract class ConnectRequest {
         return player.getDownstreamClient().connectAsync()
                 .thenCompose(v -> player.getDownstreamClient().loginAsync())
                 .thenAccept(v -> {
-                    log.info("成功连接到目标服务器: 玩家={}, 服务器={}",
-                            player.getName(), targetServer.getName());
-
                     // 更新玩家的连接状态
                     updatePlayerConnection();
                 });
@@ -75,13 +70,10 @@ public abstract class ConnectRequest {
      * 处理连接失败
      */
     protected void handleConnectFailure(Throwable throwable) {
-        log.error("连接失败: 玩家={}, 目标服务器={}, 错误={}",
-                player.getName(), targetServer.getName(), throwable.getMessage());
-
         if (reason == ConnectReason.INITIAL_CONNECT) {
-            player.kick("无法连接到服务器: " + throwable.getMessage());
+            player.kick(TranslateManager.translate("sliderproxy.network.connection.kick.connect", throwable.getMessage()));
         } else {
-            player.sendMessage("切换服务器失败: " + throwable.getMessage());
+            player.sendMessage(TranslateManager.translate("sliderproxy.network.connection.message.switchfailed", throwable.getMessage()));
         }
     }
 

@@ -3,11 +3,9 @@ package net.slidermc.sliderproxy.network.netty.downstream;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import net.slidermc.sliderproxy.api.player.PlayerManager;
-import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.ProtocolState;
-import net.slidermc.sliderproxy.network.connection.PlayerConnection;
+import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
 import net.slidermc.sliderproxy.network.packet.NetworkPacketRegistry;
 import net.slidermc.sliderproxy.network.packet.PacketDirection;
@@ -28,19 +26,21 @@ public class DownstreamPacketDecoder extends ByteToMessageDecoder {
             byteBuf.markReaderIndex();
 
             int packetId = MinecraftProtocolHelper.readVarInt(byteBuf);
-            ProxiedPlayer player = PlayerManager.getInstance().getPlayerByDownstreamChannel(channelHandlerContext.channel());
-            if (player == null) {
-                log.warn("未找到与通道关联的玩家");
+            
+            // 从 Channel 获取 MinecraftNettyClient，协议状态由 client 自主管理
+            MinecraftNettyClient client = MinecraftNettyClient.fromChannel(channelHandlerContext.channel());
+            if (client == null) {
+                log.warn("未找到与通道关联的下游客户端");
                 channelHandlerContext.channel().close();
                 return;
             }
-            PlayerConnection playerConnection = player.getPlayerConnection();
-            ProtocolState state = playerConnection.getDownstreamInboundProtocolState();
+            
+            ProtocolState state = client.getInboundProtocolState();
 
             /*log.debug("📥 收到下游包: id=0x{}, state={}, player={}, remoteAddress={}",
                     Integer.toHexString(packetId),
                     state,
-                    player.getName(),
+                    client.getBindPlayer().getName(),
                     channelHandlerContext.channel().remoteAddress());*/
 
             PacketInfo packetInfo = NetworkPacketRegistry.getInstance().getPacketInfo(

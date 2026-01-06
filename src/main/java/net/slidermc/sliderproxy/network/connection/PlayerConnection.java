@@ -3,6 +3,7 @@ package net.slidermc.sliderproxy.network.connection;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 import net.slidermc.sliderproxy.network.ProtocolState;
+import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -10,7 +11,15 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 玩家连接管理 - 维护客户端与代理之间的连接状态
- * 注意：所有协议状态都是代理维护的状态，不是客户端或服务器的实际状态
+ * 
+ * 架构说明：
+ * - 上游状态（客户端 ↔ 代理）由 PlayerConnection 管理
+ * - 下游状态（代理 ↔ 服务器）由各 MinecraftNettyClient 自主管理
+ * 
+ * 这样设计的原因：
+ * 1. 每个下游连接有独立的协议状态生命周期
+ * 2. 切换服务器时，新连接失败不会影响上游状态
+ * 3. 避免客户端卡在 Configuration 阶段无法回退
  */
 public class PlayerConnection {
     private static final Logger log = LoggerFactory.getLogger(PlayerConnection.class);
@@ -18,9 +27,8 @@ public class PlayerConnection {
     private volatile ProtocolState upstreamInboundProtocolState;
     private volatile ProtocolState upstreamOutboundProtocolState;
 
+    // 下游 Channel 引用（用于快速访问）
     private volatile Channel downstreamChannel;
-    private volatile ProtocolState downstreamInboundProtocolState;
-    private volatile ProtocolState downstreamOutboundProtocolState;
 
     public static final AttributeKey<PlayerConnection> KEY = AttributeKey.valueOf("player_connection");
 
@@ -84,42 +92,28 @@ public class PlayerConnection {
 
     /**
      * 获得下游入站协议状态（代理接收服务器数据时使用的状态）
-     * 注意：这是代理维护的状态，表示代理认为应该用什么状态解析服务器发来的数据
-     * @return 下游入站协议状态
+     * 注意：下游状态现在由 MinecraftNettyClient 自主管理
+     * @return 下游入站协议状态，如果没有活跃的下游连接则返回 null
+     * @deprecated 请直接从 MinecraftNettyClient 获取状态
      */
-    public ProtocolState getDownstreamInboundProtocolState() {
-        return downstreamInboundProtocolState;
+    @Deprecated
+    public @Nullable ProtocolState getDownstreamInboundProtocolState() {
+        if (downstreamChannel == null) return null;
+        MinecraftNettyClient client = MinecraftNettyClient.fromChannel(downstreamChannel);
+        return client != null ? client.getInboundProtocolState() : null;
     }
 
     /**
      * 获得下游出站协议状态（代理发送数据给服务器时使用的状态）
-     * 注意：这是代理维护的状态，表示代理准备用什么状态编码发送给服务器的数据
-     * @return 下游出站协议状态
+     * 注意：下游状态现在由 MinecraftNettyClient 自主管理
+     * @return 下游出站协议状态，如果没有活跃的下游连接则返回 null
+     * @deprecated 请直接从 MinecraftNettyClient 获取状态
      */
-    public ProtocolState getDownstreamOutboundProtocolState() {
-        return downstreamOutboundProtocolState;
-    }
-
-    /**
-     * 设置下游入站协议状态（代理接收服务器数据时使用的状态）
-     * @param downstreamInboundProtocolState 下游入站协议状态
-     */
-    public void setDownstreamInboundProtocolState(@NotNull ProtocolState downstreamInboundProtocolState) {
-        /*log.debug("设置下游入站状态: {} -> {} [调用栈: {}]",
-                this.downstreamInboundProtocolState, downstreamInboundProtocolState,  // 修正：使用正确的变量
-                Thread.currentThread().getStackTrace()[2]);*/
-        this.downstreamInboundProtocolState = downstreamInboundProtocolState;
-    }
-
-    /**
-     * 设置下游出站协议状态（代理发送数据给服务器时使用的状态）
-     * @param downstreamOutboundProtocolState 下游出站协议状态
-     */
-    public void setDownstreamOutboundProtocolState(@NotNull ProtocolState downstreamOutboundProtocolState) {
-        /*log.debug("设置下游出站状态: {} -> {} [调用栈: {}]",
-                this.downstreamOutboundProtocolState, downstreamOutboundProtocolState,  // 修正
-                Thread.currentThread().getStackTrace()[2]);*/
-        this.downstreamOutboundProtocolState = downstreamOutboundProtocolState;
+    @Deprecated
+    public @Nullable ProtocolState getDownstreamOutboundProtocolState() {
+        if (downstreamChannel == null) return null;
+        MinecraftNettyClient client = MinecraftNettyClient.fromChannel(downstreamChannel);
+        return client != null ? client.getOutboundProtocolState() : null;
     }
 
     /**
@@ -127,9 +121,6 @@ public class PlayerConnection {
      * @param upstreamInboundProtocolState 上游入站协议状态
      */
     public void setUpstreamInboundProtocolState(@NotNull ProtocolState upstreamInboundProtocolState) {
-        /*log.debug("设置上游入站状态: {} -> {} [调用栈: {}]",
-                this.upstreamInboundProtocolState, upstreamInboundProtocolState,
-                Thread.currentThread().getStackTrace()[2]);*/
         this.upstreamInboundProtocolState = upstreamInboundProtocolState;
     }
 
@@ -138,9 +129,6 @@ public class PlayerConnection {
      * @param upstreamOutboundProtocolState 上游出站协议状态
      */
     public void setUpstreamOutboundProtocolState(@NotNull ProtocolState upstreamOutboundProtocolState) {
-        /*log.debug("设置上游出站状态: {} -> {} [调用栈: {}]",
-                this.upstreamOutboundProtocolState, upstreamOutboundProtocolState,  // 修正
-                Thread.currentThread().getStackTrace()[2]);*/
         this.upstreamOutboundProtocolState = upstreamOutboundProtocolState;
     }
 }
