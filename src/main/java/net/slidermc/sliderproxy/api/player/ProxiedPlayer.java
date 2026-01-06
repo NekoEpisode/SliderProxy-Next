@@ -8,9 +8,13 @@ import net.slidermc.sliderproxy.api.player.connectionrequest.ServerSwitchRequest
 import net.slidermc.sliderproxy.api.player.data.ClientInformation;
 import net.slidermc.sliderproxy.api.player.data.GameProfile;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
+import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundDisconnectLoginPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundDisconnectPlayPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSystemChatPacket;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -117,7 +121,15 @@ public class ProxiedPlayer implements CommandSender {
         playerConnection.getUpstreamChannel().writeAndFlush(packet);
     }
 
-    public void kick(String reason) {
+    public void kick(Component reason) {
+        if (playerConnection.getUpstreamOutboundProtocolState() == ProtocolState.LOGIN) {
+            sendPacket(new ClientboundDisconnectLoginPacket(reason));
+        } else if (playerConnection.getUpstreamOutboundProtocolState() == ProtocolState.CONFIGURATION) {
+            sendPacket(new ClientboundDisconnectConfigurationPacket(reason));
+        } else if (playerConnection.getUpstreamOutboundProtocolState() == ProtocolState.PLAY) {
+            sendPacket(new ClientboundDisconnectPlayPacket(reason));
+        }
+
         // 关闭连接
         playerConnection.getUpstreamChannel().close();
         if (playerConnection.getDownstreamChannel() != null) {

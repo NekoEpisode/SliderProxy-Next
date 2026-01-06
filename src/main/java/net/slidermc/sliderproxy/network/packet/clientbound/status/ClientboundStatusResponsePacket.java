@@ -8,6 +8,7 @@ import io.netty.channel.ChannelHandlerContext;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.slidermc.sliderproxy.ProxyStaticValues;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
@@ -25,8 +26,8 @@ public class ClientboundStatusResponsePacket implements IMinecraftPacket {
     private int protocolVersion;
 
     public ClientboundStatusResponsePacket() {
-        this.version = "1.21.8"; // 默认值
-        this.protocolVersion = 772; // 默认值
+        this.version = ProxyStaticValues.MOTD_VERSION;
+        this.protocolVersion = ProxyStaticValues.PROTOCOL_VERSION;
     }
 
     public ClientboundStatusResponsePacket(int max, int online, List<PlayerInfo> sample, String minimessageDescription, boolean enforceSecureChat, String version, int protocolVersion) {

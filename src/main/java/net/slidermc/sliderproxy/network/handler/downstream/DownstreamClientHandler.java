@@ -3,6 +3,8 @@ package net.slidermc.sliderproxy.network.handler.downstream;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
@@ -11,6 +13,8 @@ import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
 import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
 
 public class DownstreamClientHandler extends ChannelInboundHandlerAdapter {
     private static final Logger log = LoggerFactory.getLogger(DownstreamClientHandler.class);
@@ -76,6 +80,6 @@ public class DownstreamClientHandler extends ChannelInboundHandlerAdapter {
             return;
         }
 
-        player.kick(TranslateManager.translate("sliderproxy.network.connection.kick.downstream"));
+        player.kick(Component.text(Objects.requireNonNull(TranslateManager.translate("sliderproxy.network.connection.kick.downstream"))).color(NamedTextColor.RED));
     }
 }

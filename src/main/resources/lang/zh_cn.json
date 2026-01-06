@@ -30,6 +30,7 @@
   "sliderproxy.network.connection.exception": "处理玩家登录时发生异常: 用户名=%s%",
   "sliderproxy.network.connection.kick.connect": "无法连接到服务器: %s%",
   "sliderproxy.network.connection.kick.downstream": "下游服务器断开了连接",
+  "sliderproxy.network.connection.kick.downstream.reason": "下游服务器断开了连接: ",
   "sliderproxy.network.connection.message.switchfailed": "切换服务器失败: %s%",
 
   "sliderproxy.network.server.connection.success": "[服务器连接] %s% -> %s1%",

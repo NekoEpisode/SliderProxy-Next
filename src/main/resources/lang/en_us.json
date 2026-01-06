@@ -30,6 +30,7 @@
   "sliderproxy.network.connection.exception": "Exception while handling player login: username=%s%",
   "sliderproxy.network.connection.kick.connect": "Cannot connect to server: %s%",
   "sliderproxy.network.connection.kick.downstream": "Downstream server disconnected",
+  "sliderproxy.network.connection.kick.downstream.reason": "Downstream server disconnected: ",
   "sliderproxy.network.connection.message.switchfailed": "Failed to switch server: %s%",
 
   "sliderproxy.network.server.connection.success": "[server connection] %s% -> %s1%",

@@ -10,7 +10,6 @@ import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
 import net.slidermc.sliderproxy.network.packet.NetworkPacketRegistry;
 import net.slidermc.sliderproxy.network.packet.PacketDirection;
 import net.slidermc.sliderproxy.network.packet.PacketInfo;
-import net.slidermc.sliderproxy.network.packet.clientbound.ClientboundDisconnectPacket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +46,8 @@ public class UpstreamPacketDecoder extends ByteToMessageDecoder {
                 // 未知包处理
                 if (state == ProtocolState.HANDSHAKE || state == ProtocolState.STATUS || state == ProtocolState.LOGIN) {
                     log.warn("在 {} 阶段收到未知包 ID: {}, 关闭连接", state, packetId);
-                    channelHandlerContext.writeAndFlush(new ClientboundDisconnectPacket("Unknown packet ID: " + packetId));
+                    // TODO: 完善提示
+                    // channelHandlerContext.writeAndFlush(new ClientboundDisconnectPacket("Unknown packet ID: " + packetId));
                     channelHandlerContext.channel().close();
                     byteBuf.skipBytes(byteBuf.readableBytes());
                     return;
@@ -70,7 +70,8 @@ public class UpstreamPacketDecoder extends ByteToMessageDecoder {
             list.add(packet);
         } catch (Exception e) {
             log.error("Error while decoding packet", e);
-            channelHandlerContext.writeAndFlush(new ClientboundDisconnectPacket("Internal server error: " + e));
+            // TODO: 完善提示
+            // channelHandlerContext.writeAndFlush(new ClientboundDisconnectPacket("Internal server error: " + e));
             channelHandlerContext.channel().close();
         }
     }

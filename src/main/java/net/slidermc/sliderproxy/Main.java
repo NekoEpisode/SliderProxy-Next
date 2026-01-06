@@ -9,14 +9,13 @@ import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.packet.NetworkPacketRegistry;
 import net.slidermc.sliderproxy.network.packet.PacketDirection;
 import net.slidermc.sliderproxy.network.packet.clientbound.ClientboundPluginMessagePacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.configuration.ClientboundFinishConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.configuration.ClientboundKeepAliveConfigurationPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundDisconnectLoginPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundLoginSuccessPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundSetCompressionPacket;
-import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundKeepAlivePlayPacket;
-import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundLoginPlayPacket;
-import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundStartConfigurationPacket;
-import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSystemChatPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.play.*;
 import net.slidermc.sliderproxy.network.packet.clientbound.status.ClientboundPongResponsePacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.status.ClientboundStatusResponsePacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.ServerboundPluginMessagePacket;
@@ -210,17 +209,17 @@ public class Main {
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.STATUS, 0x01, ClientboundPongResponsePacket.class);
 
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.LOGIN, 0x02, ClientboundLoginSuccessPacket.class);
-        // NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.LOGIN, 0x00, ClientboundDisconnectPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.LOGIN, 0x00, ClientboundDisconnectLoginPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.LOGIN, 0x03, ClientboundSetCompressionPacket.class);
 
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.CONFIGURATION, 0x04, ClientboundKeepAliveConfigurationPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.CONFIGURATION, 0x03, ClientboundFinishConfigurationPacket.class);
-        // NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.CONFIGURATION, 0x02, ClientboundDisconnectPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.CONFIGURATION, 0x02, ClientboundDisconnectConfigurationPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.CONFIGURATION, 0x01, ClientboundPluginMessagePacket.class);
 
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x6F, ClientboundStartConfigurationPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x26, ClientboundKeepAlivePlayPacket.class);
-        // NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x1C, ClientboundDisconnectPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x1C, ClientboundDisconnectPlayPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x18, ClientboundPluginMessagePacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x72, ClientboundSystemChatPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x2B, ClientboundLoginPlayPacket.class);

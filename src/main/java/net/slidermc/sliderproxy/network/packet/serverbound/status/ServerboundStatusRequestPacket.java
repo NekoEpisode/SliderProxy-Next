@@ -2,6 +2,7 @@ package net.slidermc.sliderproxy.network.packet.serverbound.status;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.slidermc.sliderproxy.ProxyStaticValues;
 import net.slidermc.sliderproxy.RunningData;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
@@ -37,8 +38,8 @@ public class ServerboundStatusRequestPacket implements IMinecraftPacket {
                 playerInfos,
                 RunningData.configuration.getString("proxy.motd"),
                 false,
-                "SliderProxy 1.21.8",
-                772
+                ProxyStaticValues.MOTD_VERSION,
+                ProxyStaticValues.PROTOCOL_VERSION
         );
         ctx.writeAndFlush(responsePacket);
         return HandleResult.UNFORWARD;

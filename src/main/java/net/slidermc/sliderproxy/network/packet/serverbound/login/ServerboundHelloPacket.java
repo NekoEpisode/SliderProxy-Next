@@ -2,6 +2,8 @@ package net.slidermc.sliderproxy.network.packet.serverbound.login;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.slidermc.sliderproxy.RunningData;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
@@ -12,10 +14,12 @@ import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundDisconnectLoginPacket;
 import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class ServerboundHelloPacket implements IMinecraftPacket {
@@ -63,7 +67,7 @@ public class ServerboundHelloPacket implements IMinecraftPacket {
 
             if (defaultServer == null) {
                 log.error(TranslateManager.translate("sliderproxy.network.connection.defaultserver.notfound", defaultServerName));
-                player.kick(TranslateManager.translate("sliderproxy.network.connection.defaultserver.unavailable"));
+                player.kick(Component.text(Objects.requireNonNull(TranslateManager.translate("sliderproxy.network.connection.defaultserver.unavailable"))).color(NamedTextColor.RED));
                 return HandleResult.UNFORWARD;
             }
 

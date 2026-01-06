@@ -1,11 +1,14 @@
 package net.slidermc.sliderproxy.api.player.connectionrequest;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -71,7 +74,7 @@ public abstract class ConnectRequest {
      */
     protected void handleConnectFailure(Throwable throwable) {
         if (reason == ConnectReason.INITIAL_CONNECT) {
-            player.kick(TranslateManager.translate("sliderproxy.network.connection.kick.connect", throwable.getMessage()));
+            player.kick(Component.text(Objects.requireNonNull(TranslateManager.translate("sliderproxy.network.connection.kick.connect", throwable.getMessage()))).color(NamedTextColor.RED));
         } else {
             player.sendMessage(TranslateManager.translate("sliderproxy.network.connection.message.switchfailed", throwable.getMessage()));
         }

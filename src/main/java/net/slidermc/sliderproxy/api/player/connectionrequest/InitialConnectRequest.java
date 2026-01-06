@@ -1,6 +1,8 @@
 package net.slidermc.sliderproxy.api.player.connectionrequest;
 
 import io.netty.channel.Channel;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
@@ -11,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -87,7 +90,6 @@ public class InitialConnectRequest extends ConnectRequest {
 
         log.error(TranslateManager.translate("sliderproxy.network.server.connection.failed", player.getName(), targetServer.getName(), throwable.getMessage()));
 
-        // 客户端还在 LOGIN 阶段，直接断开并显示错误消息
-        player.kick(TranslateManager.translate("sliderproxy.network.server.connection.kick.default", targetServer.getName(), throwable.getMessage()));
+        player.kick(Component.text(Objects.requireNonNull(TranslateManager.translate("sliderproxy.network.server.connection.kick.default", targetServer.getName(), throwable.getMessage()))).color(NamedTextColor.RED));
     }
 }
