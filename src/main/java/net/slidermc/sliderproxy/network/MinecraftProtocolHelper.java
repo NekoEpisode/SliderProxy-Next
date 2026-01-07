@@ -1,6 +1,7 @@
 package net.slidermc.sliderproxy.network;
 
 import io.netty.buffer.ByteBuf;
+import net.kyori.adventure.key.Key;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -226,8 +227,16 @@ public class MinecraftProtocolHelper {
         writeVarInt(buf, value.getId());
     }
 
-    // 创建一个标记接口，用于标记有ID的枚举
+    // 用于标记有ID的枚举
     public interface ProtocolEnum {
         int getId();
+    }
+
+    public static void writeKey(ByteBuf buf, Key key) {
+        writeString(buf, key.namespace() + ":" + key.value());
+    }
+
+    public static Key readKey(ByteBuf buf) {
+        return Key.key(readString(buf));
     }
 }
