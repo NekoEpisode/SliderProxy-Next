@@ -14,8 +14,9 @@ import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 public class ServerboundChatCommandPacket implements IMinecraftPacket {
-    private static final Logger log = LoggerFactory.getLogger(ServerboundChatCommandPacket.class);
     private String command;
 
     public ServerboundChatCommandPacket() {}
@@ -43,14 +44,14 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
         if (command.startsWith("server")) {
             String[] commands = command.split(" ");
             if (commands.length < 2) {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(TranslateManager.translate("sliderproxy.command.server.noargs")));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(Objects.requireNonNull(TranslateManager.translate("sliderproxy.command.server.noargs"))));
                 return HandleResult.UNFORWARD;
             }
             ProxiedServer target = ServerManager.getInstance().getServer(commands[1]);
             if (target != null) {
                 player.connectTo(target);
             } else {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(TranslateManager.translate("sliderproxy.command.server.notfound", commands[1])));
+                player.sendMessage(MiniMessage.miniMessage().deserialize(Objects.requireNonNull(TranslateManager.translate("sliderproxy.command.server.notfound", commands[1]))));
             }
             return HandleResult.UNFORWARD;
         }
