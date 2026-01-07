@@ -6,12 +6,8 @@ import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ServerboundLoginAcknowledgePacket implements IMinecraftPacket {
-    private static final Logger log = LoggerFactory.getLogger(ServerboundLoginAcknowledgePacket.class);
-
     public ServerboundLoginAcknowledgePacket() {}
 
     @Override
