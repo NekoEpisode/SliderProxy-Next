@@ -1,6 +1,7 @@
 package net.slidermc.sliderproxy.network.packet.serverbound.play;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
@@ -29,19 +30,30 @@ public class ServerboundConfigurationAckPacket implements IMinecraftPacket {
 
             if (player.isSwitchingServer()) {
                 log.debug("玩家正在切换服务器，处理配置确认: 玩家={}", player.getName());
-
-                // 设置上游入站状态为配置状态
                 player.getPlayerConnection().setUpstreamInboundProtocolState(ProtocolState.CONFIGURATION);
-
                 // 通知连接请求处理配置确认
                 player.handleConfigurationAck();
-
-                // 不转发这个包，因为是服务器切换流程的一部分
-                return HandleResult.UNFORWARD;
+            } else {
+                // 下游发的Start Configuration
+                log.debug("收到ConfigurationAck，但SliderProxy并没有切换服务器，可能是来自下游");
+                player.getPlayerConnection().setUpstreamInboundProtocolState(ProtocolState.CONFIGURATION);
+                player.getPlayerConnection().setUpstreamOutboundProtocolState(ProtocolState.CONFIGURATION);
+                log.debug("设置上游状态到 CONFIGURATION");
+                player.getDownstreamClient().getChannel()
+                        .writeAndFlush(new ServerboundConfigurationAckPacket())
+                        .addListener((ChannelFutureListener) future -> {
+                            if (future.isSuccess()) {
+                                player.getDownstreamClient().setInboundProtocolState(ProtocolState.CONFIGURATION);
+                                player.getDownstreamClient().setOutboundProtocolState(ProtocolState.CONFIGURATION);
+                                log.debug("ConfigurationAck 已发送，设置下游状态到 CONFIGURATION");
+                            } else {
+                                log.error("ConfigurationAck 发送失败", future.cause());
+                            }
+                        });
             }
+            return HandleResult.UNFORWARD;
         }
 
-        // 如果不是服务器切换，正常转发
         return HandleResult.FORWARD;
     }
 }
