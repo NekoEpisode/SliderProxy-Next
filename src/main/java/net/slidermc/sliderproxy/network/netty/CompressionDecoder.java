@@ -27,23 +27,26 @@ public class CompressionDecoder extends ByteToMessageDecoder {
         in.markReaderIndex();
 
         try {
-            int uncompressedLength = MinecraftProtocolHelper.readVarInt(in);
+            // 读取 Data Length（这是FrameDecoder切分后的包内容的开头）
+            int dataLength = MinecraftProtocolHelper.readVarInt(in);
 
-            if (uncompressedLength == 0) {
-                // 未压缩的包 - 直接输出剩余数据
+            if (dataLength == 0) {
+                // 未压缩：Data Length = 0，剩余的是完整的 Packet ID + Data
                 ByteBuf uncompressed = in.readRetainedSlice(in.readableBytes());
                 out.add(uncompressed);
             } else {
-                // 压缩的包 - 解压缩
+                // 压缩：Data Length 是解压后的长度
+                // 剩余的都是压缩数据（FrameDecoder已经根据Packet Length切好了）
                 byte[] compressedData = new byte[in.readableBytes()];
                 in.readBytes(compressedData);
 
-                byte[] uncompressedData = new byte[uncompressedLength];
+                // 解压缩
+                byte[] uncompressedData = new byte[dataLength];
                 inflater.setInput(compressedData);
 
                 int resultLength = inflater.inflate(uncompressedData);
-                if (resultLength != uncompressedLength) {
-                    throw new DataFormatException("解压缩长度不匹配: 期望 " + uncompressedLength + ", 实际 " + resultLength);
+                if (resultLength != dataLength) {
+                    throw new DataFormatException("解压缩长度不匹配: 期望 " + dataLength + ", 实际 " + resultLength);
                 }
                 inflater.reset();
 
