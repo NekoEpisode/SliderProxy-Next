@@ -8,6 +8,7 @@ import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.api.server.ServerManager;
 import net.slidermc.sliderproxy.listener.ReceivePluginMessageEventHandler;
 import net.slidermc.sliderproxy.network.ProtocolState;
+import net.slidermc.sliderproxy.network.encryption.ServerEncryptionManager;
 import net.slidermc.sliderproxy.network.packet.NetworkPacketRegistry;
 import net.slidermc.sliderproxy.network.packet.PacketDirection;
 import net.slidermc.sliderproxy.network.packet.clientbound.ClientboundPluginMessagePacket;
@@ -15,6 +16,7 @@ import net.slidermc.sliderproxy.network.packet.clientbound.configuration.Clientb
 import net.slidermc.sliderproxy.network.packet.clientbound.configuration.ClientboundFinishConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.configuration.ClientboundKeepAliveConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundDisconnectLoginPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundEncryptionRequestPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundLoginSuccessPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundSetCompressionPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.*;
@@ -25,6 +27,7 @@ import net.slidermc.sliderproxy.network.packet.serverbound.configuration.Serverb
 import net.slidermc.sliderproxy.network.packet.serverbound.configuration.ServerboundFinishConfigurationAckPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.configuration.ServerboundKeepAliveConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.handshake.ServerboundHandshakePacket;
+import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundEncryptionResponsePacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundHelloPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundLoginAcknowledgePacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.play.ServerboundChatCommandPacket;
@@ -93,6 +96,13 @@ public class Main {
 
         // 读取并创建服务器
         loadServersFromConfig(yamlConfiguration, serverManager);
+
+        // 如果启用 online-mode，初始化加密管理器
+        boolean onlineMode = yamlConfiguration.getBoolean("proxy.online-mode", true);
+        if (onlineMode) {
+            ServerEncryptionManager.getInstance();
+            log.info(TranslateManager.translate("sliderproxy.encryption.initialized"));
+        }
 
         SliderProxyServer server = new SliderProxyServer(new InetSocketAddress(host, port));
         server.run();
@@ -219,6 +229,7 @@ public class Main {
 
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.LOGIN, 0x02, ClientboundLoginSuccessPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.LOGIN, 0x00, ClientboundDisconnectLoginPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.LOGIN, 0x01, ClientboundEncryptionRequestPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.LOGIN, 0x03, ClientboundSetCompressionPacket.class);
 
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.CONFIGURATION, 0x04, ClientboundKeepAliveConfigurationPacket.class);
@@ -232,6 +243,7 @@ public class Main {
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x18, ClientboundPluginMessagePacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x72, ClientboundSystemChatPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x2B, ClientboundLoginPlayPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x73, ClientboundSoundEffectPacket.class);
     }
 
     private static void registerServerboundPackets() {
@@ -241,6 +253,7 @@ public class Main {
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.STATUS, 0x01, ServerboundPingRequestPacket.class);
 
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.LOGIN, 0x00, ServerboundHelloPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.LOGIN, 0x01, ServerboundEncryptionResponsePacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.LOGIN, 0x03, ServerboundLoginAcknowledgePacket.class);
 
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.CONFIGURATION, 0x04, ServerboundKeepAliveConfigurationPacket.class);

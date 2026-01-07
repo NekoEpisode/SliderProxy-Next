@@ -43,5 +43,8 @@
   "sliderproxy.network.server.switch.kick.error": "§cError: %s%",
 
   "sliderproxy.command.server.noargs": "<red>Please enter a server name!</red>",
-  "sliderproxy.command.server.notfound": "<red>Server %s% not found!</red>"
+  "sliderproxy.command.server.notfound": "<red>Server %s% not found!</red>",
+
+  "sliderproxy.encryption.initialized": "Encryption system initialized (RSA key pair generated)",
+  "sliderproxy.auth.failed": "Authentication failed, please make sure you are using a premium account"
 }

@@ -43,5 +43,8 @@
   "sliderproxy.network.server.switch.kick.error": "§c错误: %s%",
 
   "sliderproxy.command.server.noargs": "<red>请输入服务器名！</red>",
-  "sliderproxy.command.server.notfound": "<red>服务器 %s% 不存在！</red>"
+  "sliderproxy.command.server.notfound": "<red>服务器 %s% 不存在！</red>",
+
+  "sliderproxy.encryption.initialized": "加密系统已初始化 (RSA密钥对已生成)",
+  "sliderproxy.auth.failed": "身份验证失败，请确保您使用的是正版账户"
 }

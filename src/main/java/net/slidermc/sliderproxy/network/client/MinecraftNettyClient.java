@@ -1,5 +1,8 @@
 package net.slidermc.sliderproxy.network.client;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -8,10 +11,13 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.AttributeKey;
+import net.slidermc.sliderproxy.RunningData;
+import net.slidermc.sliderproxy.api.config.YamlConfiguration;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.player.data.ClientInformation;
 import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.netty.downstream.DownstreamChannelInitializer;
+import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundLoginSuccessPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.configuration.ServerboundClientInformationConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.handshake.ServerboundHandshakePacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundHelloPacket;
@@ -20,7 +26,9 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -29,9 +37,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class MinecraftNettyClient {
     private static final Logger log = LoggerFactory.getLogger(MinecraftNettyClient.class);
-    
+
     public static final AttributeKey<MinecraftNettyClient> KEY = AttributeKey.valueOf("downstream_client");
-    
+
     private final InetSocketAddress address;
     private Channel channel;
     private EventLoopGroup group;
@@ -76,7 +84,7 @@ public class MinecraftNettyClient {
 
         ChannelFuture future = bootstrap.connect(address).sync();
         this.channel = future.channel();
-        
+
         // 协议状态由 MinecraftNettyClient 自主管理，初始化时已设为 HANDSHAKE
         connected = true;
     }
@@ -114,31 +122,93 @@ public class MinecraftNettyClient {
         loginFuture = new CompletableFuture<>();
 
         try {
-            // 先发送握手包（在 HANDSHAKE 状态下）
-            ServerboundHandshakePacket handshakePacket = new ServerboundHandshakePacket(772, address.getHostString(), (short) address.getPort(), 2);
-            channel.writeAndFlush(handshakePacket).addListener(future -> {
-                if (future.isSuccess()) {
-                    // 握手包发送成功后，切换到 LOGIN 状态
-                    setInboundProtocolState(ProtocolState.LOGIN);
-                    setOutboundProtocolState(ProtocolState.LOGIN);
+            String ipForwardType = "none";
+            YamlConfiguration configuration = RunningData.configuration;
+            if (configuration != null) {
+                ipForwardType = configuration.getString("proxy.ip-forward-type", "none").toLowerCase();
+            }
 
-                    // 然后发送登录包
-                    ServerboundHelloPacket helloPacket = new ServerboundHelloPacket(bindPlayer.getGameProfile().name(), bindPlayer.getGameProfile().uuid());
-                    channel.writeAndFlush(helloPacket).addListener(loginFuture -> {
-                        if (!loginFuture.isSuccess()) {
-                            MinecraftNettyClient.this.failLogin(loginFuture.cause());
+            log.debug("IP转发类型: {}", ipForwardType);
+            switch (ipForwardType) {
+                case "legacy" -> {
+                    String ip = "0.0.0.0";
+                    if (channel != null) {
+                        SocketAddress remoteAddress = bindPlayer.getPlayerConnection().getUpstreamChannel().remoteAddress();
+                        if (remoteAddress instanceof InetSocketAddress) {
+                            InetAddress inetAddress = ((InetSocketAddress) remoteAddress).getAddress();
+                            if (inetAddress != null) {
+                                ip = inetAddress.getHostAddress();
+                            }
+                        }
+                    }
+                    
+                    // 构建 BungeeCord legacy forwarding 格式
+                    // 格式: hostname\0ip\0uuid\0properties_json
+                    StringBuilder bungeeCordHost = new StringBuilder();
+                    bungeeCordHost.append(address.getHostString());
+                    bungeeCordHost.append("\00").append(ip);
+                    bungeeCordHost.append("\00").append(bindPlayer.getGameProfile().uuid().toString());
+                    
+                    // 添加皮肤属性 (如果有)
+                    if (bindPlayer.getProperties() != null && !bindPlayer.getProperties().isEmpty()) {
+                        JsonArray propsArray = new JsonArray();
+                        for (ClientboundLoginSuccessPacket.Property prop : bindPlayer.getProperties()) {
+                            JsonObject propObj = new JsonObject();
+                            propObj.addProperty("name", prop.name());
+                            propObj.addProperty("value", prop.value());
+                            if (prop.signature() != null) {
+                                propObj.addProperty("signature", prop.signature());
+                            }
+                            propsArray.add(propObj);
+                        }
+                        bungeeCordHost.append("\00").append(new Gson().toJson(propsArray));
+                    }
+                    
+                    ServerboundHandshakePacket handshakePacket = new ServerboundHandshakePacket(
+                            772, bungeeCordHost.toString(), (short) address.getPort(), 2);
+                    channel.writeAndFlush(handshakePacket).addListener(future -> {
+                        if (future.isSuccess()) {
+                            // 握手包发送成功后，切换到 LOGIN 状态
+                            setInboundProtocolState(ProtocolState.LOGIN);
+                            setOutboundProtocolState(ProtocolState.LOGIN);
+
+                            ServerboundHelloPacket helloPacket = new ServerboundHelloPacket(bindPlayer.getName(), bindPlayer.getGameProfile().uuid());
+                            channel.writeAndFlush(helloPacket).addListener(loginFuture -> {
+                                if (!loginFuture.isSuccess()) {
+                                    MinecraftNettyClient.this.failLogin(loginFuture.cause());
+                                }
+                            });
+                        } else {
+                            MinecraftNettyClient.this.failLogin(future.cause());
                         }
                     });
-                } else {
-                    MinecraftNettyClient.this.failLogin(future.cause());
                 }
-            });
+                default -> {
+                    ServerboundHandshakePacket handshakePacket = new ServerboundHandshakePacket(772, address.getHostString(), (short) address.getPort(), 2);
+                    channel.writeAndFlush(handshakePacket).addListener(future -> {
+                        if (future.isSuccess()) {
+                            // 握手包发送成功后，切换到 LOGIN 状态
+                            setInboundProtocolState(ProtocolState.LOGIN);
+                            setOutboundProtocolState(ProtocolState.LOGIN);
 
-            return loginFuture;
+                            ServerboundHelloPacket helloPacket = new ServerboundHelloPacket(bindPlayer.getName(), bindPlayer.getGameProfile().uuid());
+                            channel.writeAndFlush(helloPacket).addListener(loginFuture -> {
+                                if (!loginFuture.isSuccess()) {
+                                    MinecraftNettyClient.this.failLogin(loginFuture.cause());
+                                }
+                            });
+                        } else {
+                            MinecraftNettyClient.this.failLogin(future.cause());
+                        }
+                    });
+                }
+            }
         } catch (Exception e) {
             log.error("Login process failed", e);
             return CompletableFuture.failedFuture(e);
         }
+
+        return loginFuture;
     }
 
     public void disconnect() {
@@ -170,7 +240,7 @@ public class MinecraftNettyClient {
     }
 
     // ========== 协议状态管理 ==========
-    
+
     /**
      * 获取下游入站协议状态（代理接收服务器数据时使用的状态）
      */
@@ -218,7 +288,7 @@ public class MinecraftNettyClient {
     }
 
     // ========== Getters ==========
-    
+
     public Channel getChannel() { return channel; }
     public InetSocketAddress getAddress() { return address; }
     public ProxiedPlayer getBindPlayer() { return bindPlayer; }

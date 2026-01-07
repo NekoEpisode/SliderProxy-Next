@@ -14,12 +14,14 @@ import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.configuration.ClientboundDisconnectConfigurationPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundDisconnectLoginPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundLoginSuccessPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundDisconnectPlayPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSystemChatPacket;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +33,7 @@ public class ProxiedPlayer implements CommandSender {
 
     private final GameProfile gameProfile;
     private String clientBrand = null;
+    private List<ClientboundLoginSuccessPacket.Property> properties = new ArrayList<>();
 
     private final ClientInformation clientInformation = new ClientInformation();
     private volatile MinecraftNettyClient downstreamClient = null;
@@ -214,5 +217,13 @@ public class ProxiedPlayer implements CommandSender {
 
     public void setClientBrand(String clientBrand) {
         this.clientBrand = clientBrand;
+    }
+
+    public List<ClientboundLoginSuccessPacket.Property> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(List<ClientboundLoginSuccessPacket.Property> properties) {
+        this.properties = properties != null ? properties : new ArrayList<>();
     }
 }

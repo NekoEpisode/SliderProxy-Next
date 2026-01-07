@@ -11,8 +11,6 @@ import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
 import net.slidermc.sliderproxy.translate.TranslateManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
