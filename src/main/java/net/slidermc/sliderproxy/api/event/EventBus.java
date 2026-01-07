@@ -58,22 +58,22 @@ public class EventBus {
                 boolean ignoreCancelled = annotation.ignoreCancelled();
 
                 RegisteredListener registeredListener = new RegisteredListener(
-                    listener, method, priority, ignoreCancelled
+                        listener, method, priority, ignoreCancelled
                 );
 
                 listeners.computeIfAbsent(eventType, k -> new EnumMap<>(EventPriority.class))
-                         .computeIfAbsent(priority, k -> new CopyOnWriteArrayList<>())
-                         .add(registeredListener);
+                        .computeIfAbsent(priority, k -> new CopyOnWriteArrayList<>())
+                        .add(registeredListener);
 
                 hasListener = true;
                 log.debug("Registered event listener: {}#{} for event {} with priority {}",
-                    clazz.getSimpleName(), method.getName(), eventType.getSimpleName(), priority);
+                        clazz.getSimpleName(), method.getName(), eventType.getSimpleName(), priority);
             }
         }
 
         if (hasListener) {
             registeredHandlers.add(listener);
-            log.info("Registered event listener class: {}", clazz.getName());
+            log.debug("Registered event listener class: {}", clazz.getName());
         } else {
             log.warn("No @EventListener methods found in {}", clazz.getName());
         }
@@ -93,12 +93,12 @@ public class EventBus {
         // 移除所有相关的监听器
         listeners.values().forEach(priorityMap -> {
             priorityMap.values().forEach(list -> {
-                list.removeIf(rl -> rl.getListener() == listener);
+                list.removeIf(rl -> rl.listener() == listener);
             });
         });
 
         registeredHandlers.remove(listener);
-        log.info("Unregistered event listener class: {}", listener.getClass().getName());
+        log.debug("Unregistered event listener class: {}", listener.getClass().getName());
     }
 
     /**
@@ -129,15 +129,15 @@ public class EventBus {
             for (RegisteredListener listener : priorityListeners) {
                 try {
                     // 检查是否忽略已取消的事件
-                    if (event.isCancelled() && listener.isIgnoreCancelled()) {
+                    if (event.isCancelled() && listener.ignoreCancelled()) {
                         continue;
                     }
 
                     listener.invoke(event);
                 } catch (Exception e) {
                     log.error("Error calling event listener: {}#{}",
-                        listener.getListener().getClass().getName(),
-                        listener.getMethod().getName(), e);
+                            listener.listener().getClass().getName(),
+                            listener.method().getName(), e);
                 }
             }
         }
@@ -155,8 +155,8 @@ public class EventBus {
             return 0;
         }
         return priorityMap.values().stream()
-            .mapToInt(List::size)
-            .sum();
+                .mapToInt(List::size)
+                .sum();
     }
 
     /**
@@ -181,18 +181,18 @@ public class EventBus {
         // 使用 trySetAccessible 替代 canAccess + setAccessible，避免某些情况下的访问问题
         if (!method.trySetAccessible()) {
             throw new IllegalArgumentException(
-                "Cannot access event listener method: " + method);
+                    "Cannot access event listener method: " + method);
         }
 
         Class<?>[] parameterTypes = method.getParameterTypes();
         if (parameterTypes.length != 1) {
             throw new IllegalArgumentException(
-                "Event listener method must have exactly one parameter: " + method);
+                    "Event listener method must have exactly one parameter: " + method);
         }
 
         if (!Event.class.isAssignableFrom(parameterTypes[0])) {
             throw new IllegalArgumentException(
-                "Event listener method parameter must be an Event subclass: " + method);
+                    "Event listener method parameter must be an Event subclass: " + method);
         }
     }
 
@@ -205,31 +205,7 @@ public class EventBus {
     /**
      * 内部类：注册的监听器包装器
      */
-    private static class RegisteredListener {
-        private final Object listener;
-        private final Method method;
-        private final EventPriority priority;
-        private final boolean ignoreCancelled;
-
-        public RegisteredListener(Object listener, Method method,
-                                 EventPriority priority, boolean ignoreCancelled) {
-            this.listener = listener;
-            this.method = method;
-            this.priority = priority;
-            this.ignoreCancelled = ignoreCancelled;
-        }
-
-        public Object getListener() {
-            return listener;
-        }
-
-        public Method getMethod() {
-            return method;
-        }
-
-        public boolean isIgnoreCancelled() {
-            return ignoreCancelled;
-        }
+    private record RegisteredListener(Object listener, Method method, EventPriority priority, boolean ignoreCancelled) {
 
         public void invoke(Event event) throws Exception {
             method.invoke(listener, event);
