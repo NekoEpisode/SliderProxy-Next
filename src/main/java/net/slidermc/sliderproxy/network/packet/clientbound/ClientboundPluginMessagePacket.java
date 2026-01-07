@@ -41,7 +41,7 @@ public class ClientboundPluginMessagePacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
-        ReceivePluginMessageEvent event = new ReceivePluginMessageEvent(identifier, data, ReceivePluginMessageEvent.From.DOWNSTREAM);
+        ReceivePluginMessageEvent event = new ReceivePluginMessageEvent(identifier, data, ReceivePluginMessageEvent.From.DOWNSTREAM, ctx.channel());
         EventRegistry.callEvent(event);
         if (!event.isCancelled()) {
             this.data = event.getData();

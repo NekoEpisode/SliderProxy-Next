@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,15 +30,16 @@ public class ProxiedPlayer implements CommandSender {
     private static final Logger log = LoggerFactory.getLogger(ProxiedPlayer.class);
 
     private final GameProfile gameProfile;
-    private final ClientInformation clientInformation = new ClientInformation();
-    private final PlayerConnection playerConnection;
-    private volatile MinecraftNettyClient downstreamClient = null;
-    private volatile ProxiedServer connectedServer = null;
-    private final List<ClientboundSystemChatPacket> needSendChatPackets = new CopyOnWriteArrayList<>();
+    private String clientBrand = null;
 
-    // 用于管理连接请求的状态
+    private final ClientInformation clientInformation = new ClientInformation();
+    private volatile MinecraftNettyClient downstreamClient = null;
+
     private final AtomicReference<ConnectRequest> currentConnectRequest = new AtomicReference<>();
     private volatile CompletableFuture<Void> startConfigurationAckFuture;
+    private final PlayerConnection playerConnection;
+    private volatile ProxiedServer connectedServer = null;
+    private final List<ClientboundSystemChatPacket> needSendChatPackets = new CopyOnWriteArrayList<>();
 
     public ProxiedPlayer(GameProfile gameProfile, PlayerConnection playerConnection) {
         this.gameProfile = gameProfile;
@@ -178,7 +180,7 @@ public class ProxiedPlayer implements CommandSender {
         this.connectedServer = connectedServer;
     }
 
-    public MinecraftNettyClient getDownstreamClient() {
+    public @Nullable MinecraftNettyClient getDownstreamClient() {
         return downstreamClient;
     }
 
@@ -204,5 +206,13 @@ public class ProxiedPlayer implements CommandSender {
 
     public List<ClientboundSystemChatPacket> getNeedSendChatPackets() {
         return needSendChatPackets;
+    }
+
+    public Optional<String> getClientBrand() {
+        return Optional.ofNullable(clientBrand);
+    }
+
+    public void setClientBrand(String clientBrand) {
+        this.clientBrand = clientBrand;
     }
 }

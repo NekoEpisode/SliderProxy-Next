@@ -6,6 +6,8 @@ import net.kyori.adventure.key.Key;
 import net.slidermc.sliderproxy.api.event.EventListener;
 import net.slidermc.sliderproxy.api.event.EventPriority;
 import net.slidermc.sliderproxy.api.event.events.ReceivePluginMessageEvent;
+import net.slidermc.sliderproxy.api.player.PlayerManager;
+import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.utils.KeyUtils;
 import org.slf4j.Logger;
@@ -15,9 +17,8 @@ public class ReceivePluginMessageEventHandler {
     private static final Logger log = LoggerFactory.getLogger(ReceivePluginMessageEventHandler.class);
 
     @EventListener(priority = EventPriority.LOWEST)
-    public void onPluginMessage(ReceivePluginMessageEvent event) {
+    public void rewriteBrand(ReceivePluginMessageEvent event) {
         Key identifier = event.getIdentifier();
-        log.debug("收到PluginMessage: {}", identifier);
         if (identifier.equals(KeyUtils.MINECRAFT_BRAND) && event.getFrom() == ReceivePluginMessageEvent.From.DOWNSTREAM && !event.isCancelled()) {
             log.debug("PluginMessage/Brand包来自下游服务器，正在修改");
             ByteBuf buf = Unpooled.buffer();
@@ -39,6 +40,23 @@ public class ReceivePluginMessageEventHandler {
                 log.error("处理Brand PluginMessage失败", e);
             } finally {
                 buf.release();
+            }
+        }
+    }
+
+    @EventListener(priority = EventPriority.LOWEST)
+    public void catchClientBrand(ReceivePluginMessageEvent event) {
+        Key identifier = event.getIdentifier();
+        if (identifier.equals(KeyUtils.MINECRAFT_BRAND) && event.getFrom() == ReceivePluginMessageEvent.From.UPSTREAM && !event.isCancelled()) {
+            log.debug("PluginMessage/Brand包来自上游客户端，正在保存");
+            ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(event.getChannel());
+            if (player != null) {
+                ByteBuf buf = Unpooled.buffer();
+                buf.writeBytes(event.getData());
+                String brand = MinecraftProtocolHelper.readString(buf);
+                player.setClientBrand(brand);
+                buf.release();
+                log.debug("已设置玩家 {} 的客户端brand为 {}", player.getName(), brand);
             }
         }
     }
