@@ -1,5 +1,6 @@
 package net.slidermc.sliderproxy.api.plugin;
 
+import net.slidermc.sliderproxy.api.event.PluginEventRegistry;
 import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -236,6 +237,8 @@ public class PluginManager {
         for (PluginContainer container : reverseOrder) {
             try {
                 container.getPlugin().onDisable();
+                // 自动清理插件的事件监听器
+                PluginEventRegistry.unregisterAllListeners(container.getPlugin());
             } catch (Exception e) {
                 container.getPlugin().getLogger().error("禁用失败", e);
             }

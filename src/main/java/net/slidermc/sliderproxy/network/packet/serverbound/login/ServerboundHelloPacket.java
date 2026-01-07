@@ -5,6 +5,8 @@ import io.netty.channel.ChannelHandlerContext;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.slidermc.sliderproxy.RunningData;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.PlayerLoginEvent;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.player.data.GameProfile;
@@ -14,7 +16,6 @@ import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
-import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundDisconnectLoginPacket;
 import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,7 @@ public class ServerboundHelloPacket implements IMinecraftPacket {
             ProxiedPlayer player = new ProxiedPlayer(new GameProfile(username, uuid), connection);
             PlayerManager.getInstance().registerPlayer(player);
             log.info(TranslateManager.translate("sliderproxy.network.connection.connected", username, connection.getUpstreamChannel().remoteAddress()));
+            EventRegistry.callEvent(new PlayerLoginEvent(player));
 
             // 获取默认服务器
             String defaultServerName = RunningData.configuration.getString("proxy.default-server", "lobby");
