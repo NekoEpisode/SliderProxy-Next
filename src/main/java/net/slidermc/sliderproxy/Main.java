@@ -1,10 +1,12 @@
 package net.slidermc.sliderproxy;
 
 import net.slidermc.sliderproxy.api.config.YamlConfiguration;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
 import net.slidermc.sliderproxy.api.plugin.PluginManager;
 import net.slidermc.sliderproxy.api.plugin.PluginManagerHolder;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.api.server.ServerManager;
+import net.slidermc.sliderproxy.listener.ReceivePluginMessageEventHandler;
 import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.packet.NetworkPacketRegistry;
 import net.slidermc.sliderproxy.network.packet.PacketDirection;
@@ -79,6 +81,9 @@ public class Main {
             log.info(TranslateManager.translate("sliderproxy.config.language.set", language));
         }
 
+        // 注册监听器
+        registerListeners();
+
         // 初始化插件系统
         initPlugins();
 
@@ -91,6 +96,10 @@ public class Main {
 
         SliderProxyServer server = new SliderProxyServer(new InetSocketAddress(host, port));
         server.run();
+    }
+
+    private static void registerListeners() {
+        EventRegistry.registerListener(new ReceivePluginMessageEventHandler());
     }
 
     /**
