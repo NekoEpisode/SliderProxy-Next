@@ -37,17 +37,38 @@ public class ServerboundPluginMessagePacket implements IMinecraftPacket {
     public HandleResult handle(ChannelHandlerContext ctx) {
         ReceivePluginMessageEvent event = new ReceivePluginMessageEvent(identifier, data, ReceivePluginMessageEvent.From.UPSTREAM, ctx.channel());
         EventRegistry.callEvent(event);
-        if (!event.isCancelled()) {
-            this.data = event.getData();
-            this.identifier = event.getIdentifier();
-            ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
-            if (player != null) {
-                MinecraftNettyClient client = player.getDownstreamClient();
-                if (client != null) {
-                    client.getChannel().writeAndFlush(this);
+        switch (event.getResult()) {
+            case HANDLE_AND_FORWARD -> {
+                this.data = event.getData();
+                this.identifier = event.getIdentifier();
+                ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
+                if (player != null) {
+                    MinecraftNettyClient client = player.getDownstreamClient();
+                    if (client != null) {
+                        client.getChannel().writeAndFlush(this);
+                    }
                 }
+                return HandleResult.UNFORWARD;
+            }
+            case HANDLE_AND_NOT_FORWARD -> {
+                this.data = event.getData();
+                this.identifier = event.getIdentifier();
+                return HandleResult.UNFORWARD;
+            }
+            case FORWARD -> {
+                // 不使用修改后的值，直接转发原内容
+                ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
+                if (player != null) {
+                    MinecraftNettyClient client = player.getDownstreamClient();
+                    if (client != null) {
+                        client.getChannel().writeAndFlush(this);
+                    }
+                }
+                return HandleResult.UNFORWARD;
+            }
+            default -> {
+                return HandleResult.UNFORWARD;
             }
         }
-        return HandleResult.UNFORWARD;
     }
 }

@@ -43,14 +43,32 @@ public class ClientboundPluginMessagePacket implements IMinecraftPacket {
     public HandleResult handle(ChannelHandlerContext ctx) {
         ReceivePluginMessageEvent event = new ReceivePluginMessageEvent(identifier, data, ReceivePluginMessageEvent.From.DOWNSTREAM, ctx.channel());
         EventRegistry.callEvent(event);
-        if (!event.isCancelled()) {
-            this.data = event.getData();
-            this.identifier = event.getIdentifier();
-            PlayerConnection playerConnection = PlayerConnection.fromChannel(ctx.channel());
-            if (playerConnection != null) {
-                playerConnection.getUpstreamChannel().writeAndFlush(this);
+        switch (event.getResult()) {
+            case HANDLE_AND_FORWARD -> {
+                this.data = event.getData();
+                this.identifier = event.getIdentifier();
+                PlayerConnection playerConnection = PlayerConnection.fromChannel(ctx.channel());
+                if (playerConnection != null) {
+                    playerConnection.getUpstreamChannel().writeAndFlush(this);
+                }
+                return HandleResult.UNFORWARD;
+            }
+            case HANDLE_AND_NOT_FORWARD -> {
+                this.data = event.getData();
+                this.identifier = event.getIdentifier();
+                return HandleResult.UNFORWARD;
+            }
+            case FORWARD -> {
+                // 不使用修改后的值，直接转发原内容
+                PlayerConnection playerConnection = PlayerConnection.fromChannel(ctx.channel());
+                if (playerConnection != null) {
+                    playerConnection.getUpstreamChannel().writeAndFlush(this);
+                }
+                return HandleResult.UNFORWARD;
+            }
+            default -> {
+                return HandleResult.UNFORWARD;
             }
         }
-        return HandleResult.UNFORWARD;
     }
 }

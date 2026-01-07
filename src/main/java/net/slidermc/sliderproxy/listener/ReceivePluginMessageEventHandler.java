@@ -16,16 +16,17 @@ import org.slf4j.LoggerFactory;
 public class ReceivePluginMessageEventHandler {
     private static final Logger log = LoggerFactory.getLogger(ReceivePluginMessageEventHandler.class);
 
-    @EventListener(priority = EventPriority.LOWEST)
+    @EventListener(priority = EventPriority.NORMAL)
     public void rewriteBrand(ReceivePluginMessageEvent event) {
         Key identifier = event.getIdentifier();
-        if (identifier.equals(KeyUtils.MINECRAFT_BRAND) && event.getFrom() == ReceivePluginMessageEvent.From.DOWNSTREAM && !event.isCancelled()) {
+        if (identifier.equals(KeyUtils.MINECRAFT_BRAND) && event.getFrom() == ReceivePluginMessageEvent.From.DOWNSTREAM &&
+                event.getResult() != ReceivePluginMessageEvent.Result.DROP && event.getResult() != ReceivePluginMessageEvent.Result.HANDLE_AND_NOT_FORWARD) {
             log.debug("PluginMessage/Brand包来自下游服务器，正在修改");
             ByteBuf buf = Unpooled.buffer();
             try {
                 buf.writeBytes(event.getData());
                 String brand = MinecraftProtocolHelper.readString(buf);
-                brand = "SliderProxy -> " + brand;
+                brand = "SliderProxy > " + brand;
 
                 ByteBuf newBuf = Unpooled.buffer();
                 MinecraftProtocolHelper.writeString(newBuf, brand);
@@ -35,6 +36,7 @@ public class ReceivePluginMessageEventHandler {
                 event.setData(newData);
 
                 newBuf.release();
+                event.setResult(ReceivePluginMessageEvent.Result.HANDLE_AND_FORWARD);
                 log.debug("已修改brand为: {}", brand);
             } catch (Exception e) {
                 log.error("处理Brand PluginMessage失败", e);
@@ -44,10 +46,11 @@ public class ReceivePluginMessageEventHandler {
         }
     }
 
-    @EventListener(priority = EventPriority.LOWEST)
+    @EventListener(priority = EventPriority.NORMAL)
     public void catchClientBrand(ReceivePluginMessageEvent event) {
         Key identifier = event.getIdentifier();
-        if (identifier.equals(KeyUtils.MINECRAFT_BRAND) && event.getFrom() == ReceivePluginMessageEvent.From.UPSTREAM && !event.isCancelled()) {
+        if (identifier.equals(KeyUtils.MINECRAFT_BRAND) && event.getFrom() == ReceivePluginMessageEvent.From.UPSTREAM &&
+                event.getResult() != ReceivePluginMessageEvent.Result.DROP && event.getResult() != ReceivePluginMessageEvent.Result.HANDLE_AND_NOT_FORWARD) {
             log.debug("PluginMessage/Brand包来自上游客户端，正在保存");
             ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(event.getChannel());
             if (player != null) {
