@@ -2,8 +2,11 @@ package net.slidermc.sliderproxy.network.connection;
 
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
+import net.slidermc.sliderproxy.api.player.PlayerManager;
+import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
+import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSystemChatPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -11,15 +14,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 玩家连接管理 - 维护客户端与代理之间的连接状态
- * 
+ * <p>
  * 架构说明：
  * - 上游状态（客户端 ↔ 代理）由 PlayerConnection 管理
  * - 下游状态（代理 ↔ 服务器）由各 MinecraftNettyClient 自主管理
- * 
- * 这样设计的原因：
- * 1. 每个下游连接有独立的协议状态生命周期
- * 2. 切换服务器时，新连接失败不会影响上游状态
- * 3. 避免客户端卡在 Configuration 阶段无法回退
  */
 public class PlayerConnection {
     private static final Logger log = LoggerFactory.getLogger(PlayerConnection.class);
@@ -130,5 +128,15 @@ public class PlayerConnection {
      */
     public void setUpstreamOutboundProtocolState(@NotNull ProtocolState upstreamOutboundProtocolState) {
         this.upstreamOutboundProtocolState = upstreamOutboundProtocolState;
+        if (upstreamOutboundProtocolState == ProtocolState.PLAY) {
+            ProxiedPlayer player = PlayerManager.getInstance().getPlayerByConnection(this);
+            if (player != null && !player.getNeedSendChatPackets().isEmpty()) {
+                log.debug("准备将缓存消息包发送给玩家 {}", player.getName());
+                for (ClientboundSystemChatPacket packet : player.getNeedSendChatPackets()) {
+                    player.sendPacket(packet);
+                }
+                player.getNeedSendChatPackets().clear();
+            }
+        }
     }
 }

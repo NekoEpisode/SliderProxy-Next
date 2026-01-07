@@ -20,7 +20,11 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ProxiedPlayer implements CommandSender {
@@ -31,6 +35,7 @@ public class ProxiedPlayer implements CommandSender {
     private final PlayerConnection playerConnection;
     private volatile MinecraftNettyClient downstreamClient = null;
     private volatile ProxiedServer connectedServer = null;
+    private final List<ClientboundSystemChatPacket> needSendChatPackets = new CopyOnWriteArrayList<>();
 
     // 用于管理连接请求的状态
     private final AtomicReference<ConnectRequest> currentConnectRequest = new AtomicReference<>();
@@ -55,7 +60,12 @@ public class ProxiedPlayer implements CommandSender {
     }
 
     public void sendMessage(Component component, boolean actionbar) {
-        sendPacket(new ClientboundSystemChatPacket(component, actionbar));
+        if (playerConnection.getUpstreamOutboundProtocolState() == ProtocolState.PLAY) {
+            sendPacket(new ClientboundSystemChatPacket(component, actionbar));
+        } else {
+            needSendChatPackets.add(new ClientboundSystemChatPacket(component, actionbar));
+            log.debug("缓存发给玩家 {} 的消息: {} (actionbar: {})", getName(), component, actionbar);
+        }
     }
 
     /**
@@ -192,5 +202,9 @@ public class ProxiedPlayer implements CommandSender {
 
     public ClientInformation getClientInformation() {
         return clientInformation;
+    }
+
+    public List<ClientboundSystemChatPacket> getNeedSendChatPackets() {
+        return needSendChatPackets;
     }
 }
