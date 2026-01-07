@@ -6,6 +6,7 @@ import io.netty.channel.ChannelHandlerContext;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.ProtocolState;
+import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
 import org.slf4j.Logger;
@@ -39,17 +40,20 @@ public class ServerboundConfigurationAckPacket implements IMinecraftPacket {
                 player.getPlayerConnection().setUpstreamInboundProtocolState(ProtocolState.CONFIGURATION);
                 player.getPlayerConnection().setUpstreamOutboundProtocolState(ProtocolState.CONFIGURATION);
                 log.debug("设置上游状态到 CONFIGURATION");
-                player.getDownstreamClient().getChannel()
-                        .writeAndFlush(new ServerboundConfigurationAckPacket())
-                        .addListener((ChannelFutureListener) future -> {
-                            if (future.isSuccess()) {
-                                player.getDownstreamClient().setInboundProtocolState(ProtocolState.CONFIGURATION);
-                                player.getDownstreamClient().setOutboundProtocolState(ProtocolState.CONFIGURATION);
-                                log.debug("ConfigurationAck 已发送，设置下游状态到 CONFIGURATION");
-                            } else {
-                                log.error("ConfigurationAck 发送失败", future.cause());
-                            }
-                        });
+                MinecraftNettyClient client = player.getDownstreamClient();
+                if (client != null) {
+                    client.getChannel()
+                            .writeAndFlush(new ServerboundConfigurationAckPacket())
+                            .addListener((ChannelFutureListener) future -> {
+                                if (future.isSuccess()) {
+                                    player.getDownstreamClient().setInboundProtocolState(ProtocolState.CONFIGURATION);
+                                    player.getDownstreamClient().setOutboundProtocolState(ProtocolState.CONFIGURATION);
+                                    log.debug("ConfigurationAck 已发送，设置下游状态到 CONFIGURATION");
+                                } else {
+                                    log.error("ConfigurationAck 发送失败", future.cause());
+                                }
+                            });
+                }
             }
             return HandleResult.UNFORWARD;
         }
