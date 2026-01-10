@@ -46,6 +46,11 @@
 
   "sliderproxy.command.server.noargs": "Please enter a server name!",
   "sliderproxy.command.server.notfound": "Server %s% not found!",
+  "sliderproxy.command.server.playeronly": "Only players can use this command",
+  "sliderproxy.command.server.already": "You are already on server %s%",
+  "sliderproxy.command.server.connectfailed": "Failed to connect to server %s%: %s1%",
+  "sliderproxy.command.server.notconnected": "You are not connected to any server",
+  "sliderproxy.command.server.current": "Current server: %s%",
 
   "sliderproxy.encryption.initialized": "Encryption system initialized (RSA key pair generated)",
   "sliderproxy.auth.failed": "Authentication failed, please make sure you are using a premium account"

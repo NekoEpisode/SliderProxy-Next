@@ -46,6 +46,11 @@
 
   "sliderproxy.command.server.noargs": "请输入服务器名！",
   "sliderproxy.command.server.notfound": "服务器 %s% 不存在！",
+  "sliderproxy.command.server.playeronly": "只有玩家可以使用此命令",
+  "sliderproxy.command.server.already": "你已经在服务器 %s% 上了",
+  "sliderproxy.command.server.connectfailed": "连接到服务器 %s% 失败: %s1%",
+  "sliderproxy.command.server.notconnected": "你当前未连接到任何服务器",
+  "sliderproxy.command.server.current": "当前服务器: %s%",
 
   "sliderproxy.encryption.initialized": "加密系统已初始化 (RSA密钥对已生成)",
   "sliderproxy.auth.failed": "身份验证失败，请确保您使用的是正版账户"

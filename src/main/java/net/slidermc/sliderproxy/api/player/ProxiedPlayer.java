@@ -2,6 +2,7 @@ package net.slidermc.sliderproxy.api.player;
 
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.slidermc.sliderproxy.RunningData;
 import net.slidermc.sliderproxy.api.command.CommandSender;
 import net.slidermc.sliderproxy.api.player.connectionrequest.ConnectRequest;
 import net.slidermc.sliderproxy.api.player.connectionrequest.InitialConnectRequest;
@@ -19,6 +20,7 @@ import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundLogi
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundDisconnectPlayPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSoundEffectPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSystemChatPacket;
+import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +76,22 @@ public class ProxiedPlayer implements CommandSender {
             needSendChatPackets.add(new ClientboundSystemChatPacket(component, actionbar));
             log.debug("缓存发给玩家 {} 的消息: {} (actionbar: {})", getName(), component, actionbar);
         }
+    }
+    
+    /**
+     * 根据玩家的语言设置获取翻译文本
+     * 
+     * @param key 翻译键
+     * @param args 参数
+     * @return 翻译后的文本
+     */
+    public String translate(String key, Object... args) {
+        String locale = clientInformation.getLocale();
+        if (locale == null || locale.isEmpty()) {
+            locale = RunningData.configuration.getString("proxy.language", "en_us");
+        }
+        String result = TranslateManager.translateWithLang(locale, key, args);
+        return result != null ? result : key;
     }
 
     /**
