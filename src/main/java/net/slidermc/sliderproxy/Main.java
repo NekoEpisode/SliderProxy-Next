@@ -1,11 +1,13 @@
 package net.slidermc.sliderproxy;
 
+import net.slidermc.sliderproxy.api.command.CommandManager;
 import net.slidermc.sliderproxy.api.config.YamlConfiguration;
 import net.slidermc.sliderproxy.api.event.EventRegistry;
 import net.slidermc.sliderproxy.api.plugin.PluginManager;
 import net.slidermc.sliderproxy.api.plugin.PluginManagerHolder;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.api.server.ServerManager;
+import net.slidermc.sliderproxy.commands.ServerCommand;
 import net.slidermc.sliderproxy.listener.ReceivePluginMessageEventHandler;
 import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.encryption.ServerEncryptionManager;
@@ -30,10 +32,7 @@ import net.slidermc.sliderproxy.network.packet.serverbound.handshake.Serverbound
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundEncryptionResponsePacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundHelloPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.login.ServerboundLoginAcknowledgePacket;
-import net.slidermc.sliderproxy.network.packet.serverbound.play.ServerboundChatCommandPacket;
-import net.slidermc.sliderproxy.network.packet.serverbound.play.ServerboundClientInformationPlayPacket;
-import net.slidermc.sliderproxy.network.packet.serverbound.play.ServerboundConfigurationAckPacket;
-import net.slidermc.sliderproxy.network.packet.serverbound.play.ServerboundKeepAlivePlayPacket;
+import net.slidermc.sliderproxy.network.packet.serverbound.play.*;
 import net.slidermc.sliderproxy.network.packet.serverbound.status.ServerboundPingRequestPacket;
 import net.slidermc.sliderproxy.network.packet.serverbound.status.ServerboundStatusRequestPacket;
 import net.slidermc.sliderproxy.translate.TranslateManager;
@@ -86,6 +85,9 @@ public class Main {
 
         // 注册监听器
         registerListeners();
+        
+        // 初始化命令系统
+        initCommands();
 
         // 初始化插件系统
         initPlugins();
@@ -110,6 +112,18 @@ public class Main {
 
     private static void registerListeners() {
         EventRegistry.registerListener(new ReceivePluginMessageEventHandler());
+    }
+    
+    /**
+     * 初始化命令系统
+     */
+    private static void initCommands() {
+        CommandManager commandManager = CommandManager.getInstance();
+        
+        // 注册内置命令
+        commandManager.registerCommand(new ServerCommand());
+        
+        log.info(TranslateManager.translate("sliderproxy.commands.initialized", commandManager.getCommands().size()));
     }
 
     /**
@@ -243,7 +257,10 @@ public class Main {
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x18, ClientboundPluginMessagePacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x72, ClientboundSystemChatPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x2B, ClientboundLoginPlayPacket.class);
-        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x73, ClientboundSoundEffectPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x6E, ClientboundSoundEffectPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x58, ClientboundSetRenderDistancePacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x10, ClientboundCommandsPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.CLIENTBOUND, ProtocolState.PLAY, 0x0F, ClientboundCommandSuggestionsPacket.class);
     }
 
     private static void registerServerboundPackets() {
@@ -264,7 +281,12 @@ public class Main {
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x1B, ServerboundKeepAlivePlayPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x15, ServerboundPluginMessagePacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x06, ServerboundChatCommandPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x08, ServerboundChatPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x0F, ServerboundConfigurationAckPacket.class);
         NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x0D, ServerboundClientInformationPlayPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x1E, ServerboundSetPlayerPositionAndRotationPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x1F, ServerboundSetPlayerRotationPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x1D, ServerboundSetPlayerPositionPacket.class);
+        NetworkPacketRegistry.getInstance().registerPacket(PacketDirection.SERVERBOUND, ProtocolState.PLAY, 0x0E, ServerboundCommandSuggestionPacket.class);
     }
 }

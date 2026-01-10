@@ -3,8 +3,8 @@ package net.slidermc.sliderproxy.network.packet.clientbound.play;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.kyori.adventure.key.Key;
-import net.slidermc.sliderproxy.api.player.PlayerManager;
-import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.PlaySoundEvent;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 public class ClientboundSoundEffectPacket implements IMinecraftPacket {
     private static final Logger log = LoggerFactory.getLogger(ClientboundSoundEffectPacket.class);
-    private Key soundEvent;
+    private SoundEvent soundEvent;
     private SoundCategory category;
     private int x, y, z;
     private float volume, pitch;
@@ -21,7 +21,7 @@ public class ClientboundSoundEffectPacket implements IMinecraftPacket {
 
     public ClientboundSoundEffectPacket() {}
 
-    public ClientboundSoundEffectPacket(Key soundEvent, SoundCategory category, int x, int y, int z, float volume, float pitch, long seed) {
+    public ClientboundSoundEffectPacket(SoundEvent soundEvent, SoundCategory category, int x, int y, int z, float volume, float pitch, long seed) {
         this.soundEvent = soundEvent;
         this.category = category;
         this.x = x;
@@ -32,9 +32,38 @@ public class ClientboundSoundEffectPacket implements IMinecraftPacket {
         this.seed = seed;
     }
 
+    /**
+     * 使用注册表 ID 创建
+     */
+    public static ClientboundSoundEffectPacket fromRegistryId(int registryId, SoundCategory category, int x, int y, int z, float volume, float pitch, long seed) {
+        return new ClientboundSoundEffectPacket(new SoundEvent(registryId, null, false, 0), category, x, y, z, volume, pitch, seed);
+    }
+
+    /**
+     * 使用内联定义创建
+     */
+    public static ClientboundSoundEffectPacket fromIdentifier(Key identifier, boolean hasFixedRange, float fixedRange, SoundCategory category, int x, int y, int z, float volume, float pitch, long seed) {
+        return new ClientboundSoundEffectPacket(new SoundEvent(null, identifier, hasFixedRange, fixedRange), category, x, y, z, volume, pitch, seed);
+    }
+
     @Override
     public void read(ByteBuf byteBuf) {
-        this.soundEvent = MinecraftProtocolHelper.readKey(byteBuf);
+        // Sound Event: ID or Sound Event
+        // 先读取 VarInt，如果是 0 则后面是内联定义，否则是注册表 ID
+        int soundId = MinecraftProtocolHelper.readVarInt(byteBuf);
+        if (soundId == 0) {
+            // 内联定义: Identifier + Optional fixed range
+            Key identifier = MinecraftProtocolHelper.readKey(byteBuf);
+            boolean hasFixedRange = byteBuf.readBoolean();
+            if (hasFixedRange) {
+                this.soundEvent = new SoundEvent(null, identifier, true, byteBuf.readFloat());
+            } else {
+                this.soundEvent = new SoundEvent(null, identifier, false, 0);
+            }
+        } else {
+            // 注册表 ID (实际 ID = soundId - 1)
+            this.soundEvent = new SoundEvent(soundId - 1, null, false, 0);
+        }
         this.category = MinecraftProtocolHelper.readEnum(byteBuf, SoundCategory::fromId);
         this.x = byteBuf.readInt();
         this.y = byteBuf.readInt();
@@ -46,7 +75,18 @@ public class ClientboundSoundEffectPacket implements IMinecraftPacket {
 
     @Override
     public void write(ByteBuf byteBuf) {
-        MinecraftProtocolHelper.writeKey(byteBuf, soundEvent);
+        if (soundEvent.registryId() != null) {
+            // 注册表 ID
+            MinecraftProtocolHelper.writeVarInt(byteBuf, soundEvent.registryId() + 1);
+        } else {
+            // 内联定义
+            MinecraftProtocolHelper.writeVarInt(byteBuf, 0);
+            MinecraftProtocolHelper.writeKey(byteBuf, soundEvent.identifier());
+            byteBuf.writeBoolean(soundEvent.hasFixedRange());
+            if (soundEvent.hasFixedRange()) {
+                byteBuf.writeFloat(soundEvent.fixedRange());
+            }
+        }
         MinecraftProtocolHelper.writeEnum(byteBuf, category);
         byteBuf.writeInt(x);
         byteBuf.writeInt(y);
@@ -58,7 +98,7 @@ public class ClientboundSoundEffectPacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
-        /*PlaySoundEvent playSoundEvent = new PlaySoundEvent(soundEvent, category, x, y, z, volume, pitch, seed);
+        PlaySoundEvent playSoundEvent = new PlaySoundEvent(soundEvent, category, x, y, z, volume, pitch, seed);
         EventRegistry.callEvent(playSoundEvent);
         this.soundEvent = playSoundEvent.getSoundEvent();
         this.category = playSoundEvent.getCategory();
@@ -67,14 +107,8 @@ public class ClientboundSoundEffectPacket implements IMinecraftPacket {
         this.z = playSoundEvent.getZ();
         this.volume = playSoundEvent.getVolume();
         this.pitch = playSoundEvent.getPitch();
-        this.seed = playSoundEvent.getSeed();*/
-        log.debug("收到sound effect包: " + this.soundEvent);
-        this.pitch = this.pitch + 0.5f;
-        ProxiedPlayer player = PlayerManager.getInstance().getPlayerByDownstreamChannel(ctx.channel());
-        if (player != null) {
-            player.sendPacket(this);
-        }
-        return HandleResult.UNFORWARD;
+        this.seed = playSoundEvent.getSeed();
+        return HandleResult.FORWARD;
     }
 
     public enum SoundCategory implements MinecraftProtocolHelper.ProtocolEnum {
@@ -117,4 +151,13 @@ public class ClientboundSoundEffectPacket implements IMinecraftPacket {
             };
         }
     }
+
+    /**
+     * Sound Event - 可以是注册表 ID 或内联定义
+     * @param registryId 注册表 ID（如果是内联定义则为 null）
+     * @param identifier 声音标识符（如果是注册表 ID 则为 null）
+     * @param hasFixedRange 是否有固定范围
+     * @param fixedRange 固定范围值
+     */
+    public record SoundEvent(Integer registryId, Key identifier, boolean hasFixedRange, float fixedRange) {}
 }

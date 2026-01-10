@@ -60,8 +60,8 @@ public class ServerboundHandshakePacket implements IMinecraftPacket {
             }
 
             case 3 -> {
-                // Transfer
-                // TODO: 完成Transfer
+                ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamInboundProtocolState(ProtocolState.LOGIN); // 将(预测)客户端的状态设置为Login(登录请求)
+                ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamOutboundProtocolState(ProtocolState.LOGIN); // 切换代理自身的状态设置为Login
             }
         }
         return HandleResult.UNFORWARD;

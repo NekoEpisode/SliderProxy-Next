@@ -2,19 +2,18 @@ package net.slidermc.sliderproxy.network.packet.serverbound.play;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.slidermc.sliderproxy.api.command.CommandManager;
+import net.slidermc.sliderproxy.api.command.PlayerCommandSource;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
-import net.slidermc.sliderproxy.api.server.ProxiedServer;
-import net.slidermc.sliderproxy.api.server.ServerManager;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
-import net.slidermc.sliderproxy.translate.TranslateManager;
-
-import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerboundChatCommandPacket implements IMinecraftPacket {
+    private static final Logger log = LoggerFactory.getLogger(ServerboundChatCommandPacket.class);
     private String command;
 
     public ServerboundChatCommandPacket() {}
@@ -39,20 +38,33 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
     public HandleResult handle(ChannelHandlerContext ctx) {
         ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
         if (player == null) return HandleResult.FORWARD;
-        if (command.startsWith("server")) {
-            String[] commands = command.split(" ");
-            if (commands.length < 2) {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(Objects.requireNonNull(TranslateManager.translate("sliderproxy.command.server.noargs"))));
-                return HandleResult.UNFORWARD;
-            }
-            ProxiedServer target = ServerManager.getInstance().getServer(commands[1]);
-            if (target != null) {
-                player.connectTo(target);
-            } else {
-                player.sendMessage(MiniMessage.miniMessage().deserialize(Objects.requireNonNull(TranslateManager.translate("sliderproxy.command.server.notfound", commands[1]))));
-            }
-            return HandleResult.UNFORWARD;
+        
+        // 检查是否是代理注册的命令
+        String commandName = command.split(" ")[0];
+        if (!CommandManager.getInstance().hasCommand(commandName)) {
+            // 不是代理命令，转发给后端服务器
+            return HandleResult.FORWARD;
         }
-        return HandleResult.FORWARD;
+        
+        // 是代理命令，执行它
+        PlayerCommandSource source = new PlayerCommandSource(player);
+        
+        try {
+            int result = CommandManager.getInstance().execute(source, command);
+            log.debug("玩家 {} 执行代理命令: /{} (结果: {})", player.getName(), command, result);
+        } catch (Exception e) {
+            log.error("执行命令时出错: /{}", command, e);
+        }
+        
+        // 代理命令不转发
+        return HandleResult.UNFORWARD;
+    }
+    
+    public String getCommand() {
+        return command;
+    }
+    
+    public void setCommand(String command) {
+        this.command = command;
     }
 }

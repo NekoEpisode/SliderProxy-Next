@@ -16,6 +16,8 @@
   "sliderproxy.plugins.loaded": "已加载 %s% 个插件",
   "sliderproxy.plugins.initialized": "插件系统已初始化，共 %s% 个插件",
 
+  "sliderproxy.commands.initialized": "命令系统已初始化，共 %s% 个命令",
+
   "sliderproxy.translate.load.success": "已加载语言文件: %s%",
   "sliderproxy.translate.load.failed": "加载语言文件失败: %s%",
   "sliderproxy.translate.register": "注册语言: %s%",
@@ -42,8 +44,8 @@
   "sliderproxy.network.server.switch.kick": "§c切换服务器失败: %s%",
   "sliderproxy.network.server.switch.kick.error": "§c错误: %s%",
 
-  "sliderproxy.command.server.noargs": "<red>请输入服务器名！</red>",
-  "sliderproxy.command.server.notfound": "<red>服务器 %s% 不存在！</red>",
+  "sliderproxy.command.server.noargs": "请输入服务器名！",
+  "sliderproxy.command.server.notfound": "服务器 %s% 不存在！",
 
   "sliderproxy.encryption.initialized": "加密系统已初始化 (RSA密钥对已生成)",
   "sliderproxy.auth.failed": "身份验证失败，请确保您使用的是正版账户"

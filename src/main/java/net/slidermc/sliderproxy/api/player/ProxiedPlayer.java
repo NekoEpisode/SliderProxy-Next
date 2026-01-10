@@ -1,5 +1,6 @@
 package net.slidermc.sliderproxy.api.player;
 
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.slidermc.sliderproxy.api.command.CommandSender;
 import net.slidermc.sliderproxy.api.player.connectionrequest.ConnectRequest;
@@ -16,6 +17,7 @@ import net.slidermc.sliderproxy.network.packet.clientbound.configuration.Clientb
 import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundDisconnectLoginPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundLoginSuccessPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundDisconnectPlayPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSoundEffectPacket;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSystemChatPacket;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -43,6 +45,9 @@ public class ProxiedPlayer implements CommandSender {
     private final PlayerConnection playerConnection;
     private volatile ProxiedServer connectedServer = null;
     private final List<ClientboundSystemChatPacket> needSendChatPackets = new CopyOnWriteArrayList<>();
+
+    private double x = 0, y = 0, z = 0;
+    private float yaw = 0, pitch = 0;
 
     public ProxiedPlayer(GameProfile gameProfile, PlayerConnection playerConnection) {
         this.gameProfile = gameProfile;
@@ -161,6 +166,20 @@ public class ProxiedPlayer implements CommandSender {
         }
     }
 
+    public void playSound(Key sound, boolean isFixedRange, float fixedRange, int x, int y, int z,
+                          ClientboundSoundEffectPacket.SoundCategory category, float volume, float pitch,
+                          long seed) {
+        sendPacket(ClientboundSoundEffectPacket.fromIdentifier(
+                sound,
+                isFixedRange,
+                fixedRange,
+                category,
+                x, y, z,
+                volume, pitch,
+                seed
+        ));
+    }
+
     // Getters and setters
     @Override
     public String getName() {
@@ -225,5 +244,45 @@ public class ProxiedPlayer implements CommandSender {
 
     public void setProperties(List<ClientboundLoginSuccessPacket.Property> properties) {
         this.properties = properties != null ? properties : new ArrayList<>();
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public double getZ() {
+        return z;
+    }
+
+    public float getPitch() {
+        return pitch;
+    }
+
+    public float getYaw() {
+        return yaw;
+    }
+
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    public void setZ(double z) {
+        this.z = z;
+    }
+
+    public void setPitch(float pitch) {
+        this.pitch = pitch;
+    }
+
+    public void setYaw(float yaw) {
+        this.yaw = yaw;
     }
 }

@@ -15,6 +15,9 @@ java {
 
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://libraries.minecraft.net")
+    }
 }
 
 dependencies {
@@ -50,6 +53,9 @@ dependencies {
     implementation("net.kyori:adventure-text-serializer-plain:4.24.0")
     implementation("net.kyori:adventure-text-serializer-gson:4.24.0")
     implementation("net.kyori:adventure-nbt:4.24.0")
+
+    // Brigadier 命令系统
+    implementation("com.mojang:brigadier:1.0.18")
 }
 
 tasks.test {

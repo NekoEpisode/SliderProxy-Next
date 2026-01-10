@@ -1,17 +1,16 @@
 package net.slidermc.sliderproxy.api.event.events;
 
-import net.kyori.adventure.key.Key;
 import net.slidermc.sliderproxy.api.event.Event;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSoundEffectPacket;
 
 public class PlaySoundEvent extends Event {
-    private Key soundEvent;
+    private ClientboundSoundEffectPacket.SoundEvent soundEvent;
     private ClientboundSoundEffectPacket.SoundCategory category;
     private int x, y, z;
     private float volume, pitch;
     private long seed;
 
-    public PlaySoundEvent (Key soundEvent, ClientboundSoundEffectPacket.SoundCategory category, int x, int y, int z, float volume, float pitch, long seed) {
+    public PlaySoundEvent (ClientboundSoundEffectPacket.SoundEvent soundEvent, ClientboundSoundEffectPacket.SoundCategory category, int x, int y, int z, float volume, float pitch, long seed) {
         this.soundEvent = soundEvent;
         this.category = category;
         this.x = x;
@@ -22,11 +21,11 @@ public class PlaySoundEvent extends Event {
         this.seed = seed;
     }
 
-    public Key getSoundEvent() {
+    public ClientboundSoundEffectPacket.SoundEvent getSoundEvent() {
         return soundEvent;
     }
 
-    public void setSoundEvent(Key soundEvent) {
+    public void setSoundEvent(ClientboundSoundEffectPacket.SoundEvent soundEvent) {
         this.soundEvent = soundEvent;
     }
 
