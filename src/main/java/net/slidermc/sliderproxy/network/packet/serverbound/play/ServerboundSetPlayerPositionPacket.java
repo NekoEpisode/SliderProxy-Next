@@ -2,6 +2,8 @@ package net.slidermc.sliderproxy.network.packet.serverbound.play;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.PlayerPositionEvent;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
@@ -42,10 +44,67 @@ public class ServerboundSetPlayerPositionPacket implements IMinecraftPacket {
     public HandleResult handle(ChannelHandlerContext ctx) {
         ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
         if (player != null) {
-            player.setX(x);
-            player.setY(feetY);
-            player.setZ(z);
+            // 触发位置事件
+            PlayerPositionEvent positionEvent = new PlayerPositionEvent(
+                player, 
+                x, 
+                feetY, 
+                z, 
+                player.getYaw(), 
+                player.getPitch(), 
+                (flags & 0x01) != 0 // onGround flag
+            );
+            EventRegistry.callEvent(positionEvent);
+            
+            // 如果事件被取消，不更新位置也不转发
+            if (positionEvent.isCancelled()) {
+                return HandleResult.UNFORWARD;
+            }
+            
+            // 应用可能被修改的值
+            player.setX(positionEvent.getX());
+            player.setY(positionEvent.getY());
+            player.setZ(positionEvent.getZ());
+            
+            // 如果值被修改，更新数据包
+            if (positionEvent.getX() != x || positionEvent.getY() != feetY || positionEvent.getZ() != z) {
+                this.x = positionEvent.getX();
+                this.feetY = positionEvent.getY();
+                this.z = positionEvent.getZ();
+            }
         }
         return HandleResult.FORWARD;
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    public double getFeetY() {
+        return feetY;
+    }
+
+    public void setFeetY(double feetY) {
+        this.feetY = feetY;
+    }
+
+    public double getZ() {
+        return z;
+    }
+
+    public void setZ(double z) {
+        this.z = z;
+    }
+
+    public byte getFlags() {
+        return flags;
+    }
+
+    public void setFlags(byte flags) {
+        this.flags = flags;
     }
 }

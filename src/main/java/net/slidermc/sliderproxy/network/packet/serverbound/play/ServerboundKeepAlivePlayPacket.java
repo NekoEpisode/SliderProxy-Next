@@ -28,4 +28,12 @@ public class ServerboundKeepAlivePlayPacket implements IMinecraftPacket {
     public HandleResult handle(ChannelHandlerContext ctx) {
         return HandleResult.FORWARD; // 暂时不处理KeepAlive，透传
     }
+
+    public long getKeepAliveId() {
+        return keepAliveId;
+    }
+
+    public void setKeepAliveId(long keepAliveId) {
+        this.keepAliveId = keepAliveId;
+    }
 }

@@ -51,4 +51,12 @@ public class ClientboundSystemChatPacket implements IMinecraftPacket {
     public void setComponent(Component component) {
         this.component = component;
     }
+
+    public boolean isOverlay() {
+        return overlay;
+    }
+
+    public void setOverlay(boolean overlay) {
+        this.overlay = overlay;
+    }
 }

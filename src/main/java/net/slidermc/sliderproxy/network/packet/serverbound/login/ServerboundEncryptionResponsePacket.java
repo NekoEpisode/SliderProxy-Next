@@ -228,4 +228,12 @@ public class ServerboundEncryptionResponsePacket implements IMinecraftPacket {
     public byte[] getEncryptedVerifyToken() {
         return encryptedVerifyToken;
     }
+
+    public void setEncryptedSharedSecret(byte[] encryptedSharedSecret) {
+        this.encryptedSharedSecret = encryptedSharedSecret;
+    }
+
+    public void setEncryptedVerifyToken(byte[] encryptedVerifyToken) {
+        this.encryptedVerifyToken = encryptedVerifyToken;
+    }
 }

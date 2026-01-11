@@ -3,6 +3,9 @@ package net.slidermc.sliderproxy.network.handler.upstream;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.PacketReceiveEvent;
+import net.slidermc.sliderproxy.api.event.events.PlayerQuitEvent;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
@@ -23,17 +26,37 @@ public class UpstreamServerHandler extends ChannelInboundHandlerAdapter {
                 return;
             }
 
-            HandleResult result = packet.handle(ctx);
+            // 触发数据包接收事件
+            PlayerConnection connection = ctx.channel().attr(PlayerConnection.KEY).get();
+            ProxiedPlayer player = connection != null ? PlayerManager.getInstance().getPlayerByConnection(connection) : null;
+            
+            PacketReceiveEvent receiveEvent = new PacketReceiveEvent(
+                player, 
+                packet, 
+                PacketReceiveEvent.Direction.FROM_CLIENT,
+                connection != null ? connection.getUpstreamInboundProtocolState() : null,
+                ctx
+            );
+            EventRegistry.callEvent(receiveEvent);
+            
+            // 如果事件被取消或不转发，直接返回
+            if (receiveEvent.isCancelled() || !receiveEvent.isForwarded()) {
+                return;
+            }
+            
+            // 使用事件中可能被修改的数据包
+            IMinecraftPacket finalPacket = receiveEvent.getPacket();
+
+            HandleResult result = finalPacket.handle(ctx);
             if (result == HandleResult.FORWARD) {
-                PlayerConnection connection = ctx.channel().attr(PlayerConnection.KEY).get();
                 if (connection != null) {
                     Channel channel = connection.getDownstreamChannel();
                     if (channel != null) {
                         if (channel.eventLoop().inEventLoop()) {
-                            channel.writeAndFlush(packet);
+                            channel.writeAndFlush(finalPacket);
                         } else {
                             channel.eventLoop().execute(() -> {
-                                channel.writeAndFlush(packet);
+                                channel.writeAndFlush(finalPacket);
                             });
                         }
                     }
@@ -50,6 +73,10 @@ public class UpstreamServerHandler extends ChannelInboundHandlerAdapter {
         ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
         if (player != null) {
             log.info(TranslateManager.translate("sliderproxy.network.connection.disconnected", player.getName()));
+            
+            // 触发玩家退出事件
+            EventRegistry.callEvent(new PlayerQuitEvent(player));
+            
             if (player.getDownstreamClient() != null) {
                 player.getDownstreamClient().disconnect();
             }

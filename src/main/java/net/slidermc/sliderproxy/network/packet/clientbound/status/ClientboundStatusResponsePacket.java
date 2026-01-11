@@ -131,8 +131,93 @@ public class ClientboundStatusResponsePacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
+        // 将 MiniMessage 字符串转换为 Component
+        net.kyori.adventure.text.Component descriptionComponent = this.description != null 
+            ? net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(this.description)
+            : net.kyori.adventure.text.Component.empty();
+        
+        // 触发 ProxyPingEvent
+        net.slidermc.sliderproxy.api.event.events.ProxyPingEvent pingEvent = 
+            new net.slidermc.sliderproxy.api.event.events.ProxyPingEvent(
+                descriptionComponent,
+                this.max, 
+                this.online, 
+                this.version, 
+                this.protocolVersion,
+                null // favicon
+            );
+        net.slidermc.sliderproxy.api.event.EventRegistry.callEvent(pingEvent);
+        
+        // 应用事件中的修改
+        this.max = pingEvent.getMaxPlayers();
+        this.online = pingEvent.getOnlinePlayers();
+        this.version = pingEvent.getVersion();
+        this.protocolVersion = pingEvent.getProtocol();
+        
+        // 将 Component 转换回 MiniMessage 字符串
+        if (pingEvent.getDescription() != null) {
+            this.description = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                .serialize(pingEvent.getDescription());
+        }
+        
         return HandleResult.UNFORWARD;
     }
 
     public record PlayerInfo(UUID uuid, String name) {}
+
+    public int getMax() {
+        return max;
+    }
+
+    public void setMax(int max) {
+        this.max = max;
+    }
+
+    public int getOnline() {
+        return online;
+    }
+
+    public void setOnline(int online) {
+        this.online = online;
+    }
+
+    public List<PlayerInfo> getSample() {
+        return sample;
+    }
+
+    public void setSample(List<PlayerInfo> sample) {
+        this.sample = sample;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public boolean isEnforceSecureChat() {
+        return enforceSecureChat;
+    }
+
+    public void setEnforceSecureChat(boolean enforceSecureChat) {
+        this.enforceSecureChat = enforceSecureChat;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public int getProtocolVersion() {
+        return protocolVersion;
+    }
+
+    public void setProtocolVersion(int protocolVersion) {
+        this.protocolVersion = protocolVersion;
+    }
 }

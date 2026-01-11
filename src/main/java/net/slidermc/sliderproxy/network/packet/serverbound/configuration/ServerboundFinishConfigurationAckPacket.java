@@ -60,6 +60,20 @@ public class ServerboundFinishConfigurationAckPacket implements IMinecraftPacket
     }
 
     private void updateProtocolStates(PlayerConnection connection, Channel downstreamChannel) {
+        // 触发 PlayerConfigurationCompleteEvent
+        net.slidermc.sliderproxy.api.player.ProxiedPlayer player = 
+            net.slidermc.sliderproxy.api.player.PlayerManager.getInstance().getPlayerByUpstreamChannel(connection.getUpstreamChannel());
+        if (player != null) {
+            net.slidermc.sliderproxy.api.event.events.PlayerConfigurationCompleteEvent configCompleteEvent = 
+                new net.slidermc.sliderproxy.api.event.events.PlayerConfigurationCompleteEvent(player);
+            net.slidermc.sliderproxy.api.event.EventRegistry.callEvent(configCompleteEvent);
+            
+            // 触发 PlayerLoginCompleteEvent
+            net.slidermc.sliderproxy.api.event.events.PlayerLoginCompleteEvent loginCompleteEvent = 
+                new net.slidermc.sliderproxy.api.event.events.PlayerLoginCompleteEvent(player);
+            net.slidermc.sliderproxy.api.event.EventRegistry.callEvent(loginCompleteEvent);
+        }
+        
         // 更新上游状态（PlayerConnection 管理）
         connection.setUpstreamInboundProtocolState(ProtocolState.PLAY);
         connection.setUpstreamOutboundProtocolState(ProtocolState.PLAY);

@@ -1,6 +1,13 @@
 {
   "sliderproxy.startup": "SliderProxy已在 %s%:%s1% 启动",
 
+  "sliderproxy.shutdown.starting": "正在关闭代理服务器...",
+  "sliderproxy.shutdown.kicking": "正在踢出 %s% 个玩家...",
+  "sliderproxy.shutdown.kickmessage": "代理服务器正在关闭",
+  "sliderproxy.shutdown.disabling": "正在禁用 %s% 个插件...",
+  "sliderproxy.shutdown.network": "正在关闭网络服务...",
+  "sliderproxy.shutdown.complete": "代理服务器已关闭",
+
   "sliderproxy.config.save.error": "在保存配置文件时出现了错误",
   "sliderproxy.config.creating": "正在创建配置文件",
   "sliderproxy.config.create.error": "创建配置文件时出现了错误",
@@ -33,6 +40,7 @@
   "sliderproxy.network.connection.kick.connect": "无法连接到服务器: %s%",
   "sliderproxy.network.connection.kick.downstream": "下游服务器断开了连接",
   "sliderproxy.network.connection.kick.downstream.reason": "下游服务器断开了连接: ",
+  "sliderproxy.network.connection.kick.protocol": "SliderProxy不支持你使用的版本！需要使用协议版本 %s%",
   "sliderproxy.network.connection.message.switchfailed": "切换服务器失败: %s%",
 
   "sliderproxy.network.server.connection.success": "[服务器连接] %s% -> %s1%",

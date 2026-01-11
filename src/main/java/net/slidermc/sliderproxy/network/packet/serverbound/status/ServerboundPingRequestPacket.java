@@ -31,4 +31,12 @@ public class ServerboundPingRequestPacket implements IMinecraftPacket {
         ctx.channel().writeAndFlush(new ClientboundPongResponsePacket(this.timestamp));
         return HandleResult.UNFORWARD;
     }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 }

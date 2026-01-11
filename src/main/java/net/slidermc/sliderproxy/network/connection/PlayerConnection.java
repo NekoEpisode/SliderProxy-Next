@@ -2,6 +2,8 @@ package net.slidermc.sliderproxy.network.connection;
 
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.ProtocolStateChangeEvent;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.ProtocolState;
@@ -119,7 +121,19 @@ public class PlayerConnection {
      * @param upstreamInboundProtocolState 上游入站协议状态
      */
     public void setUpstreamInboundProtocolState(@NotNull ProtocolState upstreamInboundProtocolState) {
+        ProtocolState oldState = this.upstreamInboundProtocolState;
         this.upstreamInboundProtocolState = upstreamInboundProtocolState;
+        
+        // 触发协议状态改变事件
+        if (oldState != null && !oldState.equals(upstreamInboundProtocolState)) {
+            ProxiedPlayer player = PlayerManager.getInstance().getPlayerByConnection(this);
+            if (player != null) {
+                EventRegistry.callEvent(new ProtocolStateChangeEvent(
+                    player, oldState, upstreamInboundProtocolState, 
+                    ProtocolStateChangeEvent.Direction.UPSTREAM
+                ));
+            }
+        }
     }
 
     /**
@@ -127,7 +141,20 @@ public class PlayerConnection {
      * @param upstreamOutboundProtocolState 上游出站协议状态
      */
     public void setUpstreamOutboundProtocolState(@NotNull ProtocolState upstreamOutboundProtocolState) {
+        ProtocolState oldState = this.upstreamOutboundProtocolState;
         this.upstreamOutboundProtocolState = upstreamOutboundProtocolState;
+        
+        // 触发协议状态改变事件
+        if (oldState != null && !oldState.equals(upstreamOutboundProtocolState)) {
+            ProxiedPlayer player = PlayerManager.getInstance().getPlayerByConnection(this);
+            if (player != null) {
+                EventRegistry.callEvent(new ProtocolStateChangeEvent(
+                    player, oldState, upstreamOutboundProtocolState,
+                    ProtocolStateChangeEvent.Direction.UPSTREAM
+                ));
+            }
+        }
+        
         if (upstreamOutboundProtocolState == ProtocolState.PLAY) {
             ProxiedPlayer player = PlayerManager.getInstance().getPlayerByConnection(this);
             if (player != null && !player.getNeedSendChatPackets().isEmpty()) {

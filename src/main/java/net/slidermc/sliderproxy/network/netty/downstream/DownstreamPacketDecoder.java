@@ -72,7 +72,24 @@ public class DownstreamPacketDecoder extends ByteToMessageDecoder {
                 log.error("已在注册表中找到包，但未能正确实例化包对象");
                 return;
             }
+            
+            // 记录读取前的位置
+            int beforeRead = byteBuf.readerIndex();
             packet.read(byteBuf);
+            int afterRead = byteBuf.readerIndex();
+            int bytesRead = afterRead - beforeRead;
+            int remainingBytes = byteBuf.readableBytes();
+            
+            // 检查是否有剩余字节
+            if (remainingBytes > 0) {
+                log.warn("包 {} (0x{}) 在 {} 阶段读取后还有 {} 字节未读取！已读取 {} 字节",
+                    packet.getClass().getSimpleName(),
+                    Integer.toHexString(packetId),
+                    state,
+                    remainingBytes,
+                    bytesRead);
+            }
+            
             list.add(packet);
         } catch (Exception e) {
             log.error("Error while decoding downstream packet", e);

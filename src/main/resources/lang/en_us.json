@@ -1,6 +1,13 @@
 {
   "sliderproxy.startup": "SliderProxy started on %s%:%s1%",
 
+  "sliderproxy.shutdown.starting": "Shutting down proxy server...",
+  "sliderproxy.shutdown.kicking": "Kicking %s% players...",
+  "sliderproxy.shutdown.kickmessage": "Server is shutting down",
+  "sliderproxy.shutdown.disabling": "Disabling %s% plugins...",
+  "sliderproxy.shutdown.network": "Closing network services...",
+  "sliderproxy.shutdown.complete": "Proxy server stopped",
+
   "sliderproxy.config.save.error": "Error occurred while saving config file",
   "sliderproxy.config.creating": "Creating config file",
   "sliderproxy.config.create.error": "Error occurred while creating config file",
@@ -33,6 +40,7 @@
   "sliderproxy.network.connection.kick.connect": "Cannot connect to server: %s%",
   "sliderproxy.network.connection.kick.downstream": "Downstream server disconnected",
   "sliderproxy.network.connection.kick.downstream.reason": "Downstream server disconnected: ",
+  "sliderproxy.network.connection.kick.protocol": "SliderProxy is not support your protocol version! Please use protocol version %s%",
   "sliderproxy.network.connection.message.switchfailed": "Failed to switch server: %s%",
 
   "sliderproxy.network.server.connection.success": "[server connection] %s% -> %s1%",

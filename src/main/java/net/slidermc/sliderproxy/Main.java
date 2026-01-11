@@ -3,11 +3,14 @@ package net.slidermc.sliderproxy;
 import net.slidermc.sliderproxy.api.command.CommandManager;
 import net.slidermc.sliderproxy.api.config.YamlConfiguration;
 import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.ProxyInitializeEvent;
 import net.slidermc.sliderproxy.api.plugin.PluginManager;
 import net.slidermc.sliderproxy.api.plugin.PluginManagerHolder;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
 import net.slidermc.sliderproxy.api.server.ServerManager;
 import net.slidermc.sliderproxy.commands.ServerCommand;
+import net.slidermc.sliderproxy.commands.SliderProxyCommand;
+import net.slidermc.sliderproxy.console.ConsoleCommandReader;
 import net.slidermc.sliderproxy.listener.ReceivePluginMessageEventHandler;
 import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.encryption.ServerEncryptionManager;
@@ -83,6 +86,9 @@ public class Main {
             log.info(TranslateManager.translate("sliderproxy.config.language.set", language));
         }
 
+        // 触发代理初始化事件
+        EventRegistry.callEvent(new ProxyInitializeEvent());
+
         // 注册监听器
         registerListeners();
         
@@ -106,7 +112,17 @@ public class Main {
             log.info(TranslateManager.translate("sliderproxy.encryption.initialized"));
         }
 
+        // 启动控制台命令读取器
+        ConsoleCommandReader consoleReader = new ConsoleCommandReader();
+        consoleReader.start();
+
+        // 创建并启动服务器
         SliderProxyServer server = new SliderProxyServer(new InetSocketAddress(host, port));
+        
+        // 注册 ShutdownHook
+        ShutdownManager.getInstance().setServer(server);
+        ShutdownManager.getInstance().registerShutdownHook();
+        
         server.run();
     }
 
@@ -121,6 +137,7 @@ public class Main {
         CommandManager commandManager = CommandManager.getInstance();
         
         // 注册内置命令
+        commandManager.registerCommand(new SliderProxyCommand());
         commandManager.registerCommand(new ServerCommand());
         
         log.info(TranslateManager.translate("sliderproxy.commands.initialized", commandManager.getCommands().size()));

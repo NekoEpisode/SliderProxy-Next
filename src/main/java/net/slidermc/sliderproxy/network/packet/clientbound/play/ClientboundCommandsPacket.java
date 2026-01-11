@@ -254,19 +254,19 @@ public class ClientboundCommandsPacket implements IMinecraftPacket {
             }
         }
     }
-    
+
     public List<CommandNodeData> getNodes() {
         return nodes;
     }
-    
+
     public void setNodes(List<CommandNodeData> nodes) {
         this.nodes = nodes;
     }
-    
+
     public int getRootIndex() {
         return rootIndex;
     }
-    
+
     public void setRootIndex(int rootIndex) {
         this.rootIndex = rootIndex;
     }

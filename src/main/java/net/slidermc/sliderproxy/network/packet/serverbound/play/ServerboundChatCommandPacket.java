@@ -4,6 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import net.slidermc.sliderproxy.api.command.CommandManager;
 import net.slidermc.sliderproxy.api.command.PlayerCommandSource;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.PlayerCommandEvent;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
@@ -39,6 +41,22 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
         ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
         if (player == null) return HandleResult.FORWARD;
         
+        // 触发命令事件
+        PlayerCommandEvent commandEvent = new PlayerCommandEvent(player, command);
+        EventRegistry.callEvent(commandEvent);
+        
+        // 如果事件被取消，不执行命令也不转发
+        if (commandEvent.isCancelled()) {
+            log.debug("命令被取消: /{}", command);
+            return HandleResult.UNFORWARD;
+        }
+        
+        // 如果命令被修改，更新命令内容
+        if (commandEvent.isCommandModified()) {
+            this.command = commandEvent.getCommand();
+            log.debug("命令被修改为: /{}", command);
+        }
+        
         // 检查是否是代理注册的命令
         String commandName = command.split(" ")[0];
         if (!CommandManager.getInstance().hasCommand(commandName)) {
@@ -59,11 +77,11 @@ public class ServerboundChatCommandPacket implements IMinecraftPacket {
         // 代理命令不转发
         return HandleResult.UNFORWARD;
     }
-    
+
     public String getCommand() {
         return command;
     }
-    
+
     public void setCommand(String command) {
         this.command = command;
     }

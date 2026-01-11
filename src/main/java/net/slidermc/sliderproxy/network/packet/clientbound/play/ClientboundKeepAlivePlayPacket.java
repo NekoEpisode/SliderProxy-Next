@@ -28,4 +28,12 @@ public class ClientboundKeepAlivePlayPacket implements IMinecraftPacket {
     public HandleResult handle(ChannelHandlerContext ctx) {
         return HandleResult.FORWARD;
     }
+
+    public long getKeepAliveId() {
+        return keepAliveId;
+    }
+
+    public void setKeepAliveId(long keepAliveId) {
+        this.keepAliveId = keepAliveId;
+    }
 }

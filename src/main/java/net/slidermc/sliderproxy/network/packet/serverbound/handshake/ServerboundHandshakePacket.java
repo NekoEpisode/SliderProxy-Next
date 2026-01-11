@@ -2,11 +2,18 @@ package net.slidermc.sliderproxy.network.packet.serverbound.handshake;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.slidermc.sliderproxy.ProxyStaticValues;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.PlayerHandshakeEvent;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.ProtocolState;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
+import net.slidermc.sliderproxy.network.packet.clientbound.login.ClientboundDisconnectLoginPacket;
+import net.slidermc.sliderproxy.translate.TranslateManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +53,17 @@ public class ServerboundHandshakePacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
+        // 触发握手事件
+        PlayerHandshakeEvent handshakeEvent = new PlayerHandshakeEvent(
+            serverAddress, 
+            serverPort, 
+            protocolVersion, 
+            intent
+        );
+        EventRegistry.callEvent(handshakeEvent);
+        
+        // 握手事件不可取消，因为协议状态必须切换
+        
         switch (this.intent) {
             case 1 -> {
                 // Status
@@ -57,11 +75,25 @@ public class ServerboundHandshakePacket implements IMinecraftPacket {
                 // Login
                 ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamInboundProtocolState(ProtocolState.LOGIN); // 将(预测)客户端的状态设置为Login(登录请求)
                 ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamOutboundProtocolState(ProtocolState.LOGIN); // 切换代理自身的状态设置为Login
+
+                if (protocolVersion != ProxyStaticValues.PROTOCOL_VERSION) {
+                    String translate = TranslateManager.translate("sliderproxy.network.connection.kick.protocol", ProxyStaticValues.PROTOCOL_VERSION);
+                    if (translate == null)
+                        translate = "SliderProxy不支持你使用的版本！需要使用协议版本 " + ProxyStaticValues.PROXY_VERSION;
+                    ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(Component.text(translate).color(NamedTextColor.RED)));
+                }
             }
 
             case 3 -> {
                 ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamInboundProtocolState(ProtocolState.LOGIN); // 将(预测)客户端的状态设置为Login(登录请求)
                 ctx.channel().attr(PlayerConnection.KEY).get().setUpstreamOutboundProtocolState(ProtocolState.LOGIN); // 切换代理自身的状态设置为Login
+
+                if (protocolVersion != ProxyStaticValues.PROTOCOL_VERSION) {
+                    String translate = TranslateManager.translate("sliderproxy.network.connection.kick.protocol", ProxyStaticValues.PROTOCOL_VERSION);
+                    if (translate == null)
+                        translate = "SliderProxy不支持你使用的版本！需要使用协议版本 " + ProxyStaticValues.PROXY_VERSION;
+                    ctx.channel().writeAndFlush(new ClientboundDisconnectLoginPacket(Component.text(translate).color(NamedTextColor.RED)));
+                }
             }
         }
         return HandleResult.UNFORWARD;
@@ -103,5 +135,21 @@ public class ServerboundHandshakePacket implements IMinecraftPacket {
                 ", serverPort=" + serverPort +
                 ", intent=" + intent +
                 '}';
+    }
+
+    public void setServerPort(short serverPort) {
+        this.serverPort = serverPort;
+    }
+
+    public void setProtocolVersion(int protocolVersion) {
+        this.protocolVersion = protocolVersion;
+    }
+
+    public void setServerAddress(String serverAddress) {
+        this.serverAddress = serverAddress;
+    }
+
+    public void setIntent(int intent) {
+        this.intent = intent;
     }
 }

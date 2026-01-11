@@ -37,4 +37,13 @@ public interface Command {
     default int getPermissionLevel() {
         return 0;
     }
+    
+    /**
+     * 获取命令别名
+     * 
+     * @return 命令别名数组，如果没有别名则返回空数组
+     */
+    default String[] getAliases() {
+        return new String[0];
+    }
 }

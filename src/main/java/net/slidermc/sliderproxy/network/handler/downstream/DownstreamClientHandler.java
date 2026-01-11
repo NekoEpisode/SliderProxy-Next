@@ -5,6 +5,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.PacketReceiveEvent;
+import net.slidermc.sliderproxy.api.event.events.ServerDisconnectEvent;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.client.MinecraftNettyClient;
 import net.slidermc.sliderproxy.network.connection.PlayerConnection;
@@ -27,9 +30,30 @@ public class DownstreamClientHandler extends ChannelInboundHandlerAdapter {
                 return;
             }
 
-            HandleResult result = packet.handle(ctx);
+            // 触发数据包接收事件
+            PlayerConnection connection = ctx.channel().attr(PlayerConnection.KEY).get();
+            MinecraftNettyClient client = MinecraftNettyClient.fromChannel(ctx.channel());
+            ProxiedPlayer player = client != null ? client.getBindPlayer() : null;
+            
+            PacketReceiveEvent receiveEvent = new PacketReceiveEvent(
+                player,
+                packet,
+                PacketReceiveEvent.Direction.FROM_SERVER,
+                client != null ? client.getInboundProtocolState() : null,
+                ctx
+            );
+            EventRegistry.callEvent(receiveEvent);
+            
+            // 如果事件被取消或不转发，直接返回
+            if (receiveEvent.isCancelled() || !receiveEvent.isForwarded()) {
+                return;
+            }
+            
+            // 使用事件中可能被修改的数据包
+            IMinecraftPacket finalPacket = receiveEvent.getPacket();
+
+            HandleResult result = finalPacket.handle(ctx);
             if (result == HandleResult.FORWARD) {
-                PlayerConnection connection = ctx.channel().attr(PlayerConnection.KEY).get();
                 if (connection != null) {
                     // 检查当前 channel 是否是活跃的下游 channel
                     // 如果不是（比如正在切换服务器时的新连接），不转发包
@@ -41,10 +65,10 @@ public class DownstreamClientHandler extends ChannelInboundHandlerAdapter {
                     Channel channel = connection.getUpstreamChannel();
                     // 确保在目标 Channel 的 EventLoop 中执行
                     if (channel.eventLoop().inEventLoop()) {
-                        channel.writeAndFlush(packet);
+                        channel.writeAndFlush(finalPacket);
                     } else {
                         channel.eventLoop().execute(() -> {
-                            channel.writeAndFlush(packet);
+                            channel.writeAndFlush(finalPacket);
                         });
                     }
                 }
@@ -78,6 +102,11 @@ public class DownstreamClientHandler extends ChannelInboundHandlerAdapter {
         if (player.getPlayerConnection().getDownstreamChannel() != ctx.channel()) {
             log.debug("非活跃下游 channel 断开，忽略: 玩家={}", player.getName());
             return;
+        }
+
+        // 触发服务器断开连接事件
+        if (player.getConnectedServer() != null) {
+            EventRegistry.callEvent(new ServerDisconnectEvent(player, player.getConnectedServer()));
         }
 
         player.kick(Component.text(Objects.requireNonNull(TranslateManager.translate("sliderproxy.network.connection.kick.downstream"))).color(NamedTextColor.RED));

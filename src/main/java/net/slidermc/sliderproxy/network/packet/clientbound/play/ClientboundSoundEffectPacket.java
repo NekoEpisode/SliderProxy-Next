@@ -5,6 +5,8 @@ import io.netty.channel.ChannelHandlerContext;
 import net.kyori.adventure.key.Key;
 import net.slidermc.sliderproxy.api.event.EventRegistry;
 import net.slidermc.sliderproxy.api.event.events.PlaySoundEvent;
+import net.slidermc.sliderproxy.api.player.PlayerManager;
+import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
 import net.slidermc.sliderproxy.network.packet.HandleResult;
 import net.slidermc.sliderproxy.network.packet.IMinecraftPacket;
@@ -98,16 +100,24 @@ public class ClientboundSoundEffectPacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
-        PlaySoundEvent playSoundEvent = new PlaySoundEvent(soundEvent, category, x, y, z, volume, pitch, seed);
-        EventRegistry.callEvent(playSoundEvent);
-        this.soundEvent = playSoundEvent.getSoundEvent();
-        this.category = playSoundEvent.getCategory();
-        this.x = playSoundEvent.getX();
-        this.y = playSoundEvent.getY();
-        this.z = playSoundEvent.getZ();
-        this.volume = playSoundEvent.getVolume();
-        this.pitch = playSoundEvent.getPitch();
-        this.seed = playSoundEvent.getSeed();
+        ProxiedPlayer player = PlayerManager.getInstance().getPlayerByDownstreamChannel(ctx.channel());
+        if (player != null) {
+            PlaySoundEvent playSoundEvent = new PlaySoundEvent(player, soundEvent, category, x, y, z, volume, pitch, seed);
+            EventRegistry.callEvent(playSoundEvent);
+            this.soundEvent = playSoundEvent.getSoundEvent();
+            this.category = playSoundEvent.getCategory();
+            this.x = playSoundEvent.getX();
+            this.y = playSoundEvent.getY();
+            this.z = playSoundEvent.getZ();
+            this.volume = playSoundEvent.getVolume();
+            this.pitch = playSoundEvent.getPitch();
+            this.seed = playSoundEvent.getSeed();
+            if (!playSoundEvent.isCancelled()) {
+                return HandleResult.FORWARD;
+            } else {
+                return HandleResult.UNFORWARD;
+            }
+        }
         return HandleResult.FORWARD;
     }
 
@@ -160,4 +170,68 @@ public class ClientboundSoundEffectPacket implements IMinecraftPacket {
      * @param fixedRange 固定范围值
      */
     public record SoundEvent(Integer registryId, Key identifier, boolean hasFixedRange, float fixedRange) {}
+
+    public SoundEvent getSoundEvent() {
+        return soundEvent;
+    }
+
+    public void setSoundEvent(SoundEvent soundEvent) {
+        this.soundEvent = soundEvent;
+    }
+
+    public SoundCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(SoundCategory category) {
+        this.category = category;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public void setX(int x) {
+        this.x = x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
+    public void setY(int y) {
+        this.y = y;
+    }
+
+    public int getZ() {
+        return z;
+    }
+
+    public void setZ(int z) {
+        this.z = z;
+    }
+
+    public float getVolume() {
+        return volume;
+    }
+
+    public void setVolume(float volume) {
+        this.volume = volume;
+    }
+
+    public float getPitch() {
+        return pitch;
+    }
+
+    public void setPitch(float pitch) {
+        this.pitch = pitch;
+    }
+
+    public long getSeed() {
+        return seed;
+    }
+
+    public void setSeed(long seed) {
+        this.seed = seed;
+    }
 }

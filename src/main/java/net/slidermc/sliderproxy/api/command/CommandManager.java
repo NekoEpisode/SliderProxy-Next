@@ -2,6 +2,7 @@ package net.slidermc.sliderproxy.api.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.RootCommandNode;
 import org.slf4j.Logger;
@@ -48,9 +49,24 @@ public class CommandManager {
             log.warn("命令 {} 已经注册，将被覆盖", command.getName());
         }
         
+        // 注册主命令
         dispatcher.register(command.getCommandBuilder());
         commands.put(command.getName(), command);
         log.info("已注册命令: {}", command.getName());
+        
+        // 注册别名
+        for (String alias : command.getAliases()) {
+            if (commands.containsKey(alias)) {
+                log.warn("命令别名 {} 已经注册，将被覆盖", alias);
+            }
+            // 为别名创建一个新的命令节点，重定向到主命令
+            dispatcher.register(
+                LiteralArgumentBuilder.<CommandSource>literal(alias)
+                    .redirect(dispatcher.getRoot().getChild(command.getName()))
+            );
+            commands.put(alias, command);
+            log.info("已注册命令别名: {} -> {}", alias, command.getName());
+        }
     }
     
     /**
@@ -61,6 +77,7 @@ public class CommandManager {
     public void unregisterCommand(String commandName) {
         commands.remove(commandName);
         // 注意: Brigadier不支持直接移除命令，需要重建dispatcher
+        // TODO: 之后想办法重建dispatcher
         log.info("已注销命令: {}", commandName);
     }
     

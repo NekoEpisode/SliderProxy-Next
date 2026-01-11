@@ -32,4 +32,12 @@ public class ClientboundSetRenderDistancePacket implements IMinecraftPacket {
     public HandleResult handle(ChannelHandlerContext ctx) {
         return HandleResult.FORWARD;
     }
+
+    public int getDistance() {
+        return distance;
+    }
+
+    public void setDistance(int distance) {
+        this.distance = distance;
+    }
 }

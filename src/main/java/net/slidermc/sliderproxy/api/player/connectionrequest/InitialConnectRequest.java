@@ -3,6 +3,9 @@ package net.slidermc.sliderproxy.api.player.connectionrequest;
 import io.netty.channel.Channel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.PlayerJoinEvent;
+import net.slidermc.sliderproxy.api.event.events.ServerConnectedEvent;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
@@ -51,6 +54,10 @@ public class InitialConnectRequest extends ConnectRequest {
                     PlayerManager.getInstance().updateDownstreamChannel(player, downstreamChannel);
 
                     updatePlayerConnection();
+                    
+                    // 触发服务器连接成功事件
+                    EventRegistry.callEvent(new ServerConnectedEvent(player, targetServer));
+                    
                     log.info(TranslateManager.translate("sliderproxy.network.server.connection.success", player.getName(), targetServer.getName()));
                 });
     }
@@ -73,6 +80,9 @@ public class InitialConnectRequest extends ConnectRequest {
 
                     // 切换上游到配置状态
                     player.getPlayerConnection().setUpstreamOutboundProtocolState(ProtocolState.CONFIGURATION);
+                    
+                    // 触发玩家加入事件
+                    EventRegistry.callEvent(new PlayerJoinEvent(player));
 
                 } catch (Exception e) {
                     throw new RuntimeException(e);

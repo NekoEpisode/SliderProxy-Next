@@ -28,6 +28,11 @@ public class ServerboundConfigurationAckPacket implements IMinecraftPacket {
         ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
         if (player != null) {
             log.debug("收到配置确认包: 玩家={}", player.getName());
+            
+            // 触发 PlayerPreConfigurationEvent
+            net.slidermc.sliderproxy.api.event.events.PlayerPreConfigurationEvent preConfigEvent = 
+                new net.slidermc.sliderproxy.api.event.events.PlayerPreConfigurationEvent(player);
+            net.slidermc.sliderproxy.api.event.EventRegistry.callEvent(preConfigEvent);
 
             if (player.isSwitchingServer()) {
                 log.debug("玩家正在切换服务器，处理配置确认: 玩家={}", player.getName());

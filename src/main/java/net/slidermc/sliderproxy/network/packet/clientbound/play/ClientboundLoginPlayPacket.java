@@ -129,4 +129,180 @@ public class ClientboundLoginPlayPacket implements IMinecraftPacket {
         }
         return HandleResult.FORWARD;
     }
+
+    public int getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(int entityId) {
+        this.entityId = entityId;
+    }
+
+    public boolean isHardcore() {
+        return isHardcore;
+    }
+
+    public void setHardcore(boolean hardcore) {
+        isHardcore = hardcore;
+    }
+
+    public List<String> getDimensionNames() {
+        return dimensionNames;
+    }
+
+    public void setDimensionNames(List<String> dimensionNames) {
+        this.dimensionNames = dimensionNames;
+    }
+
+    public int getMaxPlayers() {
+        return maxPlayers;
+    }
+
+    public void setMaxPlayers(int maxPlayers) {
+        this.maxPlayers = maxPlayers;
+    }
+
+    public int getViewDistance() {
+        return viewDistance;
+    }
+
+    public void setViewDistance(int viewDistance) {
+        this.viewDistance = viewDistance;
+    }
+
+    public int getSimulationDistance() {
+        return simulationDistance;
+    }
+
+    public void setSimulationDistance(int simulationDistance) {
+        this.simulationDistance = simulationDistance;
+    }
+
+    public boolean isReducedDebugInfo() {
+        return reducedDebugInfo;
+    }
+
+    public void setReducedDebugInfo(boolean reducedDebugInfo) {
+        this.reducedDebugInfo = reducedDebugInfo;
+    }
+
+    public boolean isDoLimitedCrafting() {
+        return doLimitedCrafting;
+    }
+
+    public void setDoLimitedCrafting(boolean doLimitedCrafting) {
+        this.doLimitedCrafting = doLimitedCrafting;
+    }
+
+    public boolean isEnableRespawnScreen() {
+        return enableRespawnScreen;
+    }
+
+    public void setEnableRespawnScreen(boolean enableRespawnScreen) {
+        this.enableRespawnScreen = enableRespawnScreen;
+    }
+
+    public int getDimensionType() {
+        return dimensionType;
+    }
+
+    public void setDimensionType(int dimensionType) {
+        this.dimensionType = dimensionType;
+    }
+
+    public String getDimensionName() {
+        return dimensionName;
+    }
+
+    public void setDimensionName(String dimensionName) {
+        this.dimensionName = dimensionName;
+    }
+
+    public long getHashedSeed() {
+        return hashedSeed;
+    }
+
+    public void setHashedSeed(long hashedSeed) {
+        this.hashedSeed = hashedSeed;
+    }
+
+    public int getGameMode() {
+        return gameMode;
+    }
+
+    public void setGameMode(int gameMode) {
+        this.gameMode = gameMode;
+    }
+
+    public byte getPreviousGameMode() {
+        return previousGameMode;
+    }
+
+    public void setPreviousGameMode(byte previousGameMode) {
+        this.previousGameMode = previousGameMode;
+    }
+
+    public boolean isFlat() {
+        return isFlat;
+    }
+
+    public void setFlat(boolean flat) {
+        isFlat = flat;
+    }
+
+    public boolean isDebug() {
+        return isDebug;
+    }
+
+    public void setDebug(boolean debug) {
+        isDebug = debug;
+    }
+
+    public boolean isHasDeathLocation() {
+        return hasDeathLocation;
+    }
+
+    public void setHasDeathLocation(boolean hasDeathLocation) {
+        this.hasDeathLocation = hasDeathLocation;
+    }
+
+    public String getDeathDimensionName() {
+        return deathDimensionName;
+    }
+
+    public void setDeathDimensionName(String deathDimensionName) {
+        this.deathDimensionName = deathDimensionName;
+    }
+
+    public int[] getDeathLocation() {
+        return deathLocation;
+    }
+
+    public void setDeathLocation(int[] deathLocation) {
+        this.deathLocation = deathLocation;
+    }
+
+    public int getPortalCooldown() {
+        return portalCooldown;
+    }
+
+    public void setPortalCooldown(int portalCooldown) {
+        this.portalCooldown = portalCooldown;
+    }
+
+    public int getSeaLevel() {
+        return seaLevel;
+    }
+
+    public void setSeaLevel(int seaLevel) {
+        this.seaLevel = seaLevel;
+    }
+
+    public boolean isEnforcesSecureChat() {
+        return enforcesSecureChat;
+    }
+
+    public void setEnforcesSecureChat(boolean enforcesSecureChat) {
+        this.enforcesSecureChat = enforcesSecureChat;
+    }
 }

@@ -68,7 +68,7 @@ tasks.withType<JavaCompile> {
 }
 
 application {
-    mainClass.set("net.slidermc.sliderproxy.SliderProxy")
+    mainClass.set("net.slidermc.sliderproxy.Main")
 }
 
 tasks.shadowJar {

@@ -1,6 +1,9 @@
 package net.slidermc.sliderproxy.api.player.connectionrequest;
 
 import io.netty.channel.Channel;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.ServerConnectedEvent;
+import net.slidermc.sliderproxy.api.event.events.ServerSwitchEvent;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.server.ProxiedServer;
@@ -35,6 +38,16 @@ public class ServerSwitchRequest extends ConnectRequest {
 
     @Override
     protected CompletableFuture<Void> preConnect() {
+        // 触发服务器切换事件
+        ProxiedServer from = player.getConnectedServer();
+        ServerSwitchEvent event = new ServerSwitchEvent(player, from, targetServer);
+        EventRegistry.callEvent(event);
+        
+        // 如果事件被取消，返回失败的 Future
+        if (event.isCancelled()) {
+            return CompletableFuture.failedFuture(new RuntimeException("Server switch cancelled by event"));
+        }
+        
         return CompletableFuture.completedFuture(null);
     }
 
@@ -89,6 +102,10 @@ public class ServerSwitchRequest extends ConnectRequest {
                     newChannel.config().setAutoRead(true);
 
                     updatePlayerConnection();
+                    
+                    // 触发服务器连接成功事件
+                    EventRegistry.callEvent(new ServerConnectedEvent(player, targetServer));
+                    
                     log.info(TranslateManager.translate("sliderproxy.network.server.switch.success", player.getName(), targetServer.getName()));
                 });
     }

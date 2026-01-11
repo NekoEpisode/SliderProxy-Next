@@ -26,6 +26,14 @@ public class ServerboundKeepAliveConfigurationPacket implements IMinecraftPacket
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
-        return HandleResult.UNFORWARD;
+        return HandleResult.FORWARD;
+    }
+
+    public long getKeepAliveId() {
+        return keepAliveId;
+    }
+
+    public void setKeepAliveId(long keepAliveId) {
+        this.keepAliveId = keepAliveId;
     }
 }

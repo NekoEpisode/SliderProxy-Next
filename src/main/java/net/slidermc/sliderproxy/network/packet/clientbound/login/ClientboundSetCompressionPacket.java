@@ -71,4 +71,8 @@ public class ClientboundSetCompressionPacket implements IMinecraftPacket {
     public int getThreshold() {
         return threshold;
     }
+
+    public void setThreshold(int threshold) {
+        this.threshold = threshold;
+    }
 }

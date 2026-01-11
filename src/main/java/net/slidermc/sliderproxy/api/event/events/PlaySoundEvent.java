@@ -1,16 +1,23 @@
 package net.slidermc.sliderproxy.api.event.events;
 
-import net.slidermc.sliderproxy.api.event.Event;
+import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.network.packet.clientbound.play.ClientboundSoundEffectPacket;
 
-public class PlaySoundEvent extends Event {
+/**
+ * 播放声音事件
+ * 在服务器向客户端发送声音效果时触发
+ */
+public class PlaySoundEvent extends PlayerEvent {
     private ClientboundSoundEffectPacket.SoundEvent soundEvent;
     private ClientboundSoundEffectPacket.SoundCategory category;
     private int x, y, z;
     private float volume, pitch;
     private long seed;
 
-    public PlaySoundEvent (ClientboundSoundEffectPacket.SoundEvent soundEvent, ClientboundSoundEffectPacket.SoundCategory category, int x, int y, int z, float volume, float pitch, long seed) {
+    public PlaySoundEvent(ProxiedPlayer player, ClientboundSoundEffectPacket.SoundEvent soundEvent, 
+                         ClientboundSoundEffectPacket.SoundCategory category, int x, int y, int z, 
+                         float volume, float pitch, long seed) {
+        super(player);
         this.soundEvent = soundEvent;
         this.category = category;
         this.x = x;

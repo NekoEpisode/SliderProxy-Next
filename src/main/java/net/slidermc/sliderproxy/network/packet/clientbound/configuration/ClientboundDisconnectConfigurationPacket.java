@@ -51,4 +51,12 @@ public class ClientboundDisconnectConfigurationPacket implements IMinecraftPacke
         player.kick(reason);
         return HandleResult.UNFORWARD;
     }
+
+    public Component getReasonComponent() {
+        return reasonComponent;
+    }
+
+    public void setReasonComponent(Component reasonComponent) {
+        this.reasonComponent = reasonComponent;
+    }
 }

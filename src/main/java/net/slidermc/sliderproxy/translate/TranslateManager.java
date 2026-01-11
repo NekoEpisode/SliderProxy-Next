@@ -136,7 +136,7 @@ public final class TranslateManager {
      */
     @Nullable
     public static String translate(@NotNull String key) {
-        return translate(currentLanguage, key);
+        return translateWithLang(currentLanguage, key);
     }
 
     /**

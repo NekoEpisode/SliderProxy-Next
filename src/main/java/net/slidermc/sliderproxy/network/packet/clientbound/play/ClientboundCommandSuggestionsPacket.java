@@ -89,8 +89,6 @@ public class ClientboundCommandSuggestionsPacket implements IMinecraftPacket {
         suggestions.add(new Suggestion(match, tooltip));
     }
     
-    // Getters and Setters
-    
     public int getTransactionId() {
         return transactionId;
     }
@@ -122,23 +120,23 @@ public class ClientboundCommandSuggestionsPacket implements IMinecraftPacket {
     public void setSuggestions(List<Suggestion> suggestions) {
         this.suggestions = suggestions;
     }
-    
+
     /**
      * 命令建议项
      */
     public static class Suggestion {
         private final String match;
         private final Component tooltip;
-        
+
         public Suggestion(String match, @Nullable Component tooltip) {
             this.match = match;
             this.tooltip = tooltip;
         }
-        
+
         public String getMatch() {
             return match;
         }
-        
+
         @Nullable
         public Component getTooltip() {
             return tooltip;

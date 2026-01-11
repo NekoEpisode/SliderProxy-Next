@@ -57,15 +57,31 @@ public class ClientboundEncryptionRequestPacket implements IMinecraftPacket {
         return serverId;
     }
 
+    public void setServerId(String serverId) {
+        this.serverId = serverId;
+    }
+
     public byte[] getPublicKey() {
         return publicKey;
+    }
+
+    public void setPublicKey(byte[] publicKey) {
+        this.publicKey = publicKey;
     }
 
     public byte[] getVerifyToken() {
         return verifyToken;
     }
 
+    public void setVerifyToken(byte[] verifyToken) {
+        this.verifyToken = verifyToken;
+    }
+
     public boolean isShouldAuthenticate() {
         return shouldAuthenticate;
+    }
+
+    public void setShouldAuthenticate(boolean shouldAuthenticate) {
+        this.shouldAuthenticate = shouldAuthenticate;
     }
 }

@@ -2,6 +2,8 @@ package net.slidermc.sliderproxy.network.packet.serverbound.configuration;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import net.slidermc.sliderproxy.api.event.EventRegistry;
+import net.slidermc.sliderproxy.api.event.events.PlayerSettingsChangedEvent;
 import net.slidermc.sliderproxy.api.player.PlayerManager;
 import net.slidermc.sliderproxy.api.player.ProxiedPlayer;
 import net.slidermc.sliderproxy.api.player.data.ClientInformation;
@@ -94,6 +96,83 @@ public class ServerboundClientInformationConfigurationPacket implements IMinecra
         clientInformation.setParticleStatus(particleStatus);
         clientInformation.setUpdated(true);
         log.debug("已更新玩家 {} 的客户端信息(configuration): {}", player.getGameProfile().name(), clientInformation);
+        
+        // 触发设置改变事件
+        PlayerSettingsChangedEvent settingsEvent = new PlayerSettingsChangedEvent(player, clientInformation);
+        EventRegistry.callEvent(settingsEvent);
+        
         return HandleResult.FORWARD;
+    }
+
+    public byte getViewDistance() {
+        return viewDistance;
+    }
+
+    public void setViewDistance(byte viewDistance) {
+        this.viewDistance = viewDistance;
+    }
+
+    public String getLocale() {
+        return locale;
+    }
+
+    public void setLocale(String locale) {
+        this.locale = locale;
+    }
+
+    public ClientInformation.ChatMode getChatMode() {
+        return chatMode;
+    }
+
+    public void setChatMode(ClientInformation.ChatMode chatMode) {
+        this.chatMode = chatMode;
+    }
+
+    public boolean isChatColors() {
+        return chatColors;
+    }
+
+    public void setChatColors(boolean chatColors) {
+        this.chatColors = chatColors;
+    }
+
+    public UnsignedByte getDisplayedSkinParts() {
+        return displayedSkinParts;
+    }
+
+    public void setDisplayedSkinParts(UnsignedByte displayedSkinParts) {
+        this.displayedSkinParts = displayedSkinParts;
+    }
+
+    public ClientInformation.MainHandType getMainHandType() {
+        return mainHandType;
+    }
+
+    public void setMainHandType(ClientInformation.MainHandType mainHandType) {
+        this.mainHandType = mainHandType;
+    }
+
+    public boolean isEnableTextFiltering() {
+        return enableTextFiltering;
+    }
+
+    public void setEnableTextFiltering(boolean enableTextFiltering) {
+        this.enableTextFiltering = enableTextFiltering;
+    }
+
+    public boolean isAllowServerListings() {
+        return allowServerListings;
+    }
+
+    public void setAllowServerListings(boolean allowServerListings) {
+        this.allowServerListings = allowServerListings;
+    }
+
+    public ClientInformation.ParticleStatus getParticleStatus() {
+        return particleStatus;
+    }
+
+    public void setParticleStatus(ClientInformation.ParticleStatus particleStatus) {
+        this.particleStatus = particleStatus;
     }
 }

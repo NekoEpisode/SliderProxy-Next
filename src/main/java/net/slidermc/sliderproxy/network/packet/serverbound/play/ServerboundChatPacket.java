@@ -115,23 +115,47 @@ public class ServerboundChatPacket implements IMinecraftPacket {
         return timestamp;
     }
 
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public long getSalt() {
         return salt;
     }
 
-    public byte[] getSignature() {
-        return signature;
+    public void setSalt(long salt) {
+        this.salt = salt;
     }
 
     public int getMessageCount() {
         return messageCount;
     }
 
+    public void setMessageCount(int messageCount) {
+        this.messageCount = messageCount;
+    }
+
+    public byte[] getSignature() {
+        return signature;
+    }
+
+    public void setSignature(byte[] signature) {
+        this.signature = signature;
+    }
+
     public byte[] getAcknowledged() {
         return acknowledged;
     }
 
+    public void setAcknowledged(byte[] acknowledged) {
+        this.acknowledged = acknowledged;
+    }
+
     public byte getChecksum() {
         return checksum;
+    }
+
+    public void setChecksum(byte checksum) {
+        this.checksum = checksum;
     }
 }

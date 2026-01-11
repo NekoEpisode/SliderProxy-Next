@@ -7,7 +7,6 @@ import com.mojang.brigadier.tree.RootCommandNode;
 import io.netty.buffer.ByteBuf;
 import net.slidermc.sliderproxy.api.command.CommandSource;
 import net.slidermc.sliderproxy.network.MinecraftProtocolHelper;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -176,78 +175,52 @@ public class CommandNodeData {
             MinecraftProtocolHelper.writeString(buf, suggestionsType);
         }
     }
-    
-    // Getters and Setters
-    
+
     public byte getFlags() {
         return flags;
     }
-    
+
     public void setFlags(byte flags) {
         this.flags = flags;
     }
-    
+
     public List<Integer> getChildren() {
         return children;
     }
-    
+
     public void setChildren(List<Integer> children) {
         this.children = children;
     }
-    
-    @Nullable
+
     public Integer getRedirectNode() {
         return redirectNode;
     }
-    
+
     public void setRedirectNode(Integer redirectNode) {
         this.redirectNode = redirectNode;
     }
-    
-    @Nullable
+
     public String getName() {
         return name;
     }
-    
+
     public void setName(String name) {
         this.name = name;
     }
-    
-    @Nullable
+
     public ArgumentTypeData getArgumentType() {
         return argumentType;
     }
-    
+
     public void setArgumentType(ArgumentTypeData argumentType) {
         this.argumentType = argumentType;
     }
-    
-    @Nullable
+
     public String getSuggestionsType() {
         return suggestionsType;
     }
-    
+
     public void setSuggestionsType(String suggestionsType) {
         this.suggestionsType = suggestionsType;
-    }
-    
-    public byte getNodeType() {
-        return (byte) (flags & 0x03);
-    }
-    
-    public boolean isExecutable() {
-        return (flags & FLAG_EXECUTABLE) != 0;
-    }
-    
-    public boolean hasRedirect() {
-        return (flags & FLAG_HAS_REDIRECT) != 0;
-    }
-    
-    public boolean hasSuggestions() {
-        return (flags & FLAG_HAS_SUGGESTIONS) != 0;
-    }
-    
-    public boolean isRestricted() {
-        return (flags & FLAG_IS_RESTRICTED) != 0;
     }
 }

@@ -10,6 +10,7 @@ public abstract class SimpleCommand implements Command {
     private final String name;
     private final String description;
     private final int permissionLevel;
+    private final String[] aliases;
     
     public SimpleCommand(String name) {
         this(name, "", 0);
@@ -20,9 +21,14 @@ public abstract class SimpleCommand implements Command {
     }
     
     public SimpleCommand(String name, String description, int permissionLevel) {
+        this(name, description, permissionLevel, new String[0]);
+    }
+    
+    public SimpleCommand(String name, String description, int permissionLevel, String... aliases) {
         this.name = name;
         this.description = description;
         this.permissionLevel = permissionLevel;
+        this.aliases = aliases;
     }
     
     @Override
@@ -38,6 +44,11 @@ public abstract class SimpleCommand implements Command {
     @Override
     public int getPermissionLevel() {
         return permissionLevel;
+    }
+    
+    @Override
+    public String[] getAliases() {
+        return aliases;
     }
     
     /**

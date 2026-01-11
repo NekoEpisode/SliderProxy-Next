@@ -316,12 +316,124 @@ public class ArgumentTypeData {
                 break;
         }
     }
-    
+
     public int getParserId() {
         return parserId;
     }
-    
+
     public void setParserId(int parserId) {
         this.parserId = parserId;
+    }
+
+    public byte getNumberFlags() {
+        return numberFlags;
+    }
+
+    public void setNumberFlags(byte numberFlags) {
+        this.numberFlags = numberFlags;
+    }
+
+    public float getMinFloat() {
+        return minFloat;
+    }
+
+    public void setMinFloat(float minFloat) {
+        this.minFloat = minFloat;
+    }
+
+    public double getMinDouble() {
+        return minDouble;
+    }
+
+    public void setMinDouble(double minDouble) {
+        this.minDouble = minDouble;
+    }
+
+    public float getMaxFloat() {
+        return maxFloat;
+    }
+
+    public void setMaxFloat(float maxFloat) {
+        this.maxFloat = maxFloat;
+    }
+
+    public double getMaxDouble() {
+        return maxDouble;
+    }
+
+    public void setMaxDouble(double maxDouble) {
+        this.maxDouble = maxDouble;
+    }
+
+    public int getMinInt() {
+        return minInt;
+    }
+
+    public void setMinInt(int minInt) {
+        this.minInt = minInt;
+    }
+
+    public int getMaxInt() {
+        return maxInt;
+    }
+
+    public void setMaxInt(int maxInt) {
+        this.maxInt = maxInt;
+    }
+
+    public long getMinLong() {
+        return minLong;
+    }
+
+    public void setMinLong(long minLong) {
+        this.minLong = minLong;
+    }
+
+    public long getMaxLong() {
+        return maxLong;
+    }
+
+    public void setMaxLong(long maxLong) {
+        this.maxLong = maxLong;
+    }
+
+    public byte getEntityFlags() {
+        return entityFlags;
+    }
+
+    public void setEntityFlags(byte entityFlags) {
+        this.entityFlags = entityFlags;
+    }
+
+    public int getStringBehavior() {
+        return stringBehavior;
+    }
+
+    public void setStringBehavior(int stringBehavior) {
+        this.stringBehavior = stringBehavior;
+    }
+
+    public byte getScoreHolderFlags() {
+        return scoreHolderFlags;
+    }
+
+    public void setScoreHolderFlags(byte scoreHolderFlags) {
+        this.scoreHolderFlags = scoreHolderFlags;
+    }
+
+    public int getMinTime() {
+        return minTime;
+    }
+
+    public void setMinTime(int minTime) {
+        this.minTime = minTime;
+    }
+
+    public String getRegistry() {
+        return registry;
+    }
+
+    public void setRegistry(String registry) {
+        this.registry = registry;
     }
 }

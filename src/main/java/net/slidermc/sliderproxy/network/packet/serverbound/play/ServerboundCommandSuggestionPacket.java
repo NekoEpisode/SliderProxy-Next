@@ -90,19 +90,19 @@ public class ServerboundCommandSuggestionPacket implements IMinecraftPacket {
         // 不是代理命令，转发给后端服务器
         return HandleResult.FORWARD;
     }
-    
+
     public int getTransactionId() {
         return transactionId;
     }
-    
+
     public void setTransactionId(int transactionId) {
         this.transactionId = transactionId;
     }
-    
+
     public String getText() {
         return text;
     }
-    
+
     public void setText(String text) {
         this.text = text;
     }

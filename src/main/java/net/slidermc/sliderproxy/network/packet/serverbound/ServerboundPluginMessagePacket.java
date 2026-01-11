@@ -35,6 +35,26 @@ public class ServerboundPluginMessagePacket implements IMinecraftPacket {
 
     @Override
     public HandleResult handle(ChannelHandlerContext ctx) {
+        // 检测客户端品牌信息
+        if (identifier.asString().equals("minecraft:brand")) {
+            ProxiedPlayer player = PlayerManager.getInstance().getPlayerByUpstreamChannel(ctx.channel());
+            if (player != null) {
+                try {
+                    // 读取品牌字符串（VarInt 长度 + UTF-8 字符串）
+                    io.netty.buffer.ByteBuf buf = io.netty.buffer.Unpooled.wrappedBuffer(data);
+                    String brand = MinecraftProtocolHelper.readString(buf);
+                    buf.release();
+                    
+                    // 触发 PlayerClientBrandEvent
+                    net.slidermc.sliderproxy.api.event.events.PlayerClientBrandEvent brandEvent = 
+                        new net.slidermc.sliderproxy.api.event.events.PlayerClientBrandEvent(player, brand);
+                    EventRegistry.callEvent(brandEvent);
+                } catch (Exception e) {
+                    // 忽略解析错误
+                }
+            }
+        }
+        
         ReceivePluginMessageEvent event = new ReceivePluginMessageEvent(identifier, data, ReceivePluginMessageEvent.From.UPSTREAM, ctx.channel());
         EventRegistry.callEvent(event);
         switch (event.getResult()) {
@@ -70,5 +90,21 @@ public class ServerboundPluginMessagePacket implements IMinecraftPacket {
                 return HandleResult.UNFORWARD;
             }
         }
+    }
+
+    public Key getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(Key identifier) {
+        this.identifier = identifier;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
     }
 }

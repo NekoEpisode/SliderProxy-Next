@@ -58,4 +58,12 @@ public class ClientboundDisconnectLoginPacket implements IMinecraftPacket {
         player.kick(reason);
         return HandleResult.UNFORWARD;
     }
+
+    public String getReasonJsonComponent() {
+        return reasonJsonComponent;
+    }
+
+    public void setReasonJsonComponent(String reasonJsonComponent) {
+        this.reasonJsonComponent = reasonJsonComponent;
+    }
 }

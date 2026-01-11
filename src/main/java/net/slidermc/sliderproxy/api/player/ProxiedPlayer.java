@@ -3,7 +3,6 @@ package net.slidermc.sliderproxy.api.player;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.slidermc.sliderproxy.RunningData;
-import net.slidermc.sliderproxy.api.command.CommandSender;
 import net.slidermc.sliderproxy.api.player.connectionrequest.ConnectRequest;
 import net.slidermc.sliderproxy.api.player.connectionrequest.InitialConnectRequest;
 import net.slidermc.sliderproxy.api.player.connectionrequest.ServerSwitchRequest;
@@ -32,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ProxiedPlayer implements CommandSender {
+public class ProxiedPlayer {
     private static final Logger log = LoggerFactory.getLogger(ProxiedPlayer.class);
 
     private final GameProfile gameProfile;
@@ -56,7 +55,6 @@ public class ProxiedPlayer implements CommandSender {
         this.playerConnection = playerConnection;
     }
 
-    @Override
     public void sendMessage(String message) {
         sendMessage(message, false);
     }
@@ -199,7 +197,6 @@ public class ProxiedPlayer implements CommandSender {
     }
 
     // Getters and setters
-    @Override
     public String getName() {
         return gameProfile.name();
     }
